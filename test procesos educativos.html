@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Test · Procesos y Contextos Educativos</title>
+<style>
+  :root {
+    --ink: #1b2430;
+    --ink-soft: #5b6573;
+    --paper: #faf8f4;
+    --paper-raised: #ffffff;
+    --line: #e4e0d8;
+    --accent: #2f5d4f;
+    --accent-soft: #e7efe9;
+    --correct: #2f7d4f;
+    --correct-bg: #e6f4ea;
+    --wrong: #b3432f;
+    --wrong-bg: #fbe9e5;
+    --gold: #b08a3e;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0 48px;
+  }
+
+  .topbar {
+    width: 100%;
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .topbar-inner {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 14px 20px 12px;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+
+  .title {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: var(--ink);
+  }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .progress-track {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--line);
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 14px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  .stat-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-right: 5px;
+    position: relative;
+    top: -1px;
+  }
+
+  .stat-dot.ok { background: var(--correct); }
+  .stat-dot.bad { background: var(--wrong); }
+
+  main {
+    width: 100%;
+    max-width: 640px;
+    padding: 20px 20px 0;
+  }
+
+  .card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px 20px 20px;
+    box-shadow: 0 1px 2px rgba(27,36,48,0.04);
+  }
+
+  .qnum {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 13px;
+    color: var(--gold);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin: 0 0 10px;
+  }
+
+  .qtext {
+    font-size: 17px;
+    line-height: 1.45;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 18px;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    text-align: left;
+    width: 100%;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 15px;
+    line-height: 1.4;
+    color: var(--ink);
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .opt:active {
+    transform: scale(0.99);
+  }
+
+  .opt:not(:disabled):hover {
+    border-color: var(--accent);
+  }
+
+  .opt-letter {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 12.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+
+  .opt-text { flex: 1; padding-top: 1px; }
+
+  .opt[disabled] { cursor: default; }
+
+  .opt.correct {
+    background: var(--correct-bg);
+    border-color: var(--correct);
+  }
+  .opt.correct .opt-letter {
+    background: var(--correct);
+    color: #fff;
+  }
+
+  .opt.wrong {
+    background: var(--wrong-bg);
+    border-color: var(--wrong);
+  }
+  .opt.wrong .opt-letter {
+    background: var(--wrong);
+    color: #fff;
+  }
+
+  .opt.dim {
+    opacity: 0.5;
+  }
+
+  .feedback {
+    display: none;
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.45;
+    font-weight: 600;
+  }
+  .feedback.show { display: block; }
+  .feedback.ok { background: var(--correct-bg); color: var(--correct); }
+  .feedback.bad { background: var(--wrong-bg); color: var(--wrong); }
+
+  .nav-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .btn {
+    flex: 1;
+    border: none;
+    border-radius: 10px;
+    padding: 13px 16px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:disabled {
+    background: var(--line);
+    color: var(--ink-soft);
+    cursor: not-allowed;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1.5px solid var(--line);
+  }
+
+  /* Start screen */
+  .start-screen {
+    max-width: 640px;
+    width: 100%;
+    padding: 60px 24px 0;
+    text-align: center;
+  }
+
+  .start-mark {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: var(--accent);
+    color: #fff;
+    font-family: Georgia, serif;
+    font-weight: 700;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 22px;
+  }
+
+  .start-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 700;
+    margin: 0 0 10px;
+  }
+
+  .start-title {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.25;
+    margin: 0 0 14px;
+  }
+
+  .start-sub {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0 0 30px;
+  }
+
+  .start-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px;
+    text-align: left;
+    margin-bottom: 24px;
+  }
+
+  .start-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    font-size: 14px;
+  }
+  .start-row + .start-row { border-top: 1px solid var(--line); }
+  .start-row span:first-child { color: var(--ink-soft); }
+  .start-row span:last-child { font-weight: 700; }
+
+  /* Results screen */
+  .results-screen {
+    max-width: 640px;
+    width: 100%;
+    padding: 50px 24px 0;
+    text-align: center;
+  }
+
+  .results-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 700;
+    margin: 0 0 10px;
+  }
+
+  .results-title {
+    font-family: Georgia, serif;
+    font-size: 25px;
+    font-weight: 700;
+    margin: 0 0 28px;
+  }
+
+  .score-ring-wrap {
+    position: relative;
+    width: 168px;
+    height: 168px;
+    margin: 0 auto 28px;
+  }
+
+  .score-ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+
+  .score-ring-bg { fill: none; stroke: var(--line); stroke-width: 10; }
+  .score-ring-fg {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.9s cubic-bezier(.4,0,.2,1);
+  }
+
+  .score-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .score-pct { font-family: Georgia, serif; font-size: 34px; font-weight: 700; }
+  .score-pct-label { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+  .results-grid {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .results-stat {
+    flex: 1;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 8px;
+  }
+  .results-stat-num { font-family: Georgia, serif; font-size: 24px; font-weight: 700; }
+  .results-stat.ok .results-stat-num { color: var(--correct); }
+  .results-stat.bad .results-stat-num { color: var(--wrong); }
+  .results-stat-label { font-size: 11.5px; color: var(--ink-soft); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .review-list {
+    text-align: left;
+    margin-bottom: 24px;
+  }
+
+  .review-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    font-weight: 700;
+    margin: 0 0 12px;
+  }
+
+  .review-item {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--wrong);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+  .review-item b { color: var(--ink); }
+  .review-item .your-ans { color: var(--wrong); }
+  .review-item .correct-ans { color: var(--correct); }
+
+  .hidden { display: none !important; }
+
+  footer-note {
+    display: block;
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-top: 10px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- START SCREEN -->
+<div class="start-screen" id="startScreen">
+  <div class="start-mark">PE</div>
+  <p class="start-eyebrow">Procesos y Contextos Educativos</p>
+  <h1 class="start-title">Test de repaso<br>285 preguntas</h1>
+  <p class="start-sub">Responde cada pregunta y pulsa una opción para ver al instante si es correcta. Tu progreso de aciertos y fallos se registra automáticamente hasta el final.</p>
+
+  <div class="start-card">
+    <div class="start-row"><span>Preguntas totales</span><span>285</span></div>
+    <div class="start-row"><span>Formato</span><span>Opción múltiple</span></div>
+    <div class="start-row"><span>Corrección</span><span>Inmediata</span></div>
+  </div>
+
+  <button class="btn btn-primary" id="startBtn" style="width:100%; margin-bottom: 40px;">Comenzar test</button>
+</div>
+
+<!-- QUIZ SCREEN -->
+<div class="hidden" id="quizScreen" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <p class="eyebrow">Procesos y Contextos Educativos</p>
+      <p class="title" id="qPositionTitle">Pregunta 1 de 285</p>
+      <div class="progress-row">
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="stats-row">
+        <span><span class="stat-dot ok"></span><span id="okCount">0</span> aciertos</span>
+        <span><span class="stat-dot bad"></span><span id="badCount">0</span> fallos</span>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <div class="card">
+      <p class="qnum" id="qNum">Pregunta 1</p>
+      <p class="qtext" id="qText">Texto de la pregunta</p>
+      <div class="options" id="optionsWrap"></div>
+      <div class="feedback" id="feedback"></div>
+      <div class="nav-row">
+        <button class="btn btn-primary" id="nextBtn" disabled>Siguiente pregunta</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- RESULTS SCREEN -->
+<div class="hidden results-screen" id="resultsScreen">
+  <p class="results-eyebrow">Resultado final</p>
+  <h1 class="results-title" id="resultsTitle">Test completado</h1>
+
+  <div class="score-ring-wrap">
+    <svg viewBox="0 0 120 120">
+      <circle class="score-ring-bg" cx="60" cy="60" r="52"></circle>
+      <circle class="score-ring-fg" id="scoreRing" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"></circle>
+    </svg>
+    <div class="score-center">
+      <div class="score-pct" id="scorePct">0%</div>
+      <div class="score-pct-label">acierto</div>
+    </div>
+  </div>
+
+  <div class="results-grid">
+    <div class="results-stat ok">
+      <div class="results-stat-num" id="finalOk">0</div>
+      <div class="results-stat-label">Aciertos</div>
+    </div>
+    <div class="results-stat bad">
+      <div class="results-stat-num" id="finalBad">0</div>
+      <div class="results-stat-label">Fallos</div>
+    </div>
+  </div>
+
+  <div class="review-list hidden" id="reviewList">
+    <p class="review-title">Preguntas falladas</p>
+    <div id="reviewItems"></div>
+  </div>
+
+  <div class="nav-row" style="margin-bottom: 50px;">
+    <button class="btn btn-ghost" id="restartBtn">Repetir test</button>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [{"num": 1, "question": "¿A qué ley debemos el título de Bachiller?", "options": {"A": "LOMLOE", "B": "LOE", "C": "Ley Moyano", "D": "LOGSE"}, "correct": "C"}, {"num": 2, "question": "La escuela paralizada se caracteriza por ser:", "options": {"A": "Efectiva y estática", "B": "Inefectiva y estática", "C": "Inefectiva y dinámica", "D": "Dinámica y efectiva"}, "correct": "B"}, {"num": 3, "question": "Teniendo en cuenta los factores para una buena organización en centros educativos, ¿cuál de los siguientes tiene que ser obligatoriamente pública?", "options": {"A": "La visión", "B": "La misión", "C": "Los objetivos", "D": "Los valores"}, "correct": "C"}, {"num": 4, "question": "¿Cuál de los factores corresponden a las escuelas ineficaces?", "options": {"A": "Falta de visión", "B": "Falta de dedicación", "C": "Relaciones disfuncionales", "D": "Las tres son correctas"}, "correct": "D"}, {"num": 5, "question": "¿Qué ley establece el instrumento jurídico para el establecimiento de los centros concertados?", "options": {"A": "LGE", "B": "LOGSE", "C": "LODE", "D": "LOCE"}, "correct": "C"}, {"num": 6, "question": "¿Cuál de los siguientes factores no interviene en el clima escolar?", "options": {"A": "Entorno físico", "B": "Relaciones entre los profesores", "C": "Disciplina", "D": "Tipos de liderazgo"}, "correct": "C"}, {"num": 7, "question": "¿En qué año fue aprobada la LODE?", "options": {"A": "2020", "B": "1985", "C": "1977", "D": "2002"}, "correct": "B"}, {"num": 8, "question": "¿Qué ley establece el departamento de orientación consistente en tutoría por primera vez?", "options": {"A": "LOGSE", "B": "LOMLOE", "C": "LGE", "D": "LOMCE"}, "correct": "A"}, {"num": 9, "question": "¿Qué ley supuso aumentar el tramo de edad de la enseñanza obligatoria hasta los 16 años?", "options": {"A": "LGE", "B": "LOGSE", "C": "LODE", "D": "Ley Moyano"}, "correct": "B"}, {"num": 10, "question": "¿Qué leyes han dado lugar a cambios en la estructura del sistema educativo?", "options": {"A": "Ley Moyano, LGE y LOGSE", "B": "LGE, LODE y LOGSE", "C": "LGE, LOE y LOMLOE", "D": "LODE, LOE y LOMLOE"}, "correct": "A"}, {"num": 11, "question": "¿Qué ley, posterior a la Constitución Española, es conocida como Ley de la Libertad?", "options": {"A": "LGE", "B": "LOGSE", "C": "LODE", "D": "LOMLOE"}, "correct": "C"}, {"num": 12, "question": "¿Qué ley establece un sistema integral de Formación Profesional, cualificaciones y acreditación?", "options": {"A": "LOCFP", "B": "LOCE", "C": "LOE", "D": "LOMCE"}, "correct": "A"}, {"num": 13, "question": "Una institución educativa errante se caracteriza por ser:", "options": {"A": "Dinámica y efectiva", "B": "Estática y efectiva", "C": "Dinámica e inefectiva", "D": "Estática e inefectiva"}, "correct": "C"}, {"num": 14, "question": "¿Qué significa calidad para un ideario social?", "options": {"A": "Enseñanza comprensiva", "B": "Permanencia en el sistema educativo", "C": "Eficiencia", "D": "A y B son ciertas"}, "correct": "D"}, {"num": 15, "question": "¿Cuál no es una característica del liderazgo positivo?", "options": {"A": "Apoya y escucha al profesorado", "B": "Facilita la cooperación", "C": "No planifica, se basa en la improvisación", "D": "Orientada al aprendizaje"}, "correct": "C"}, {"num": 16, "question": "¿Cuál de las siguientes respuestas no es un eje transversal de la LOMLOE?", "options": {"A": "Comprensión lectora", "B": "TIC", "C": "Expresión oral pero no escrita", "D": "Educación cívica y constitucional"}, "correct": "C"}, {"num": 17, "question": "¿A partir de qué ley el profesorado debe elaborar el proyecto curricular docente?", "options": {"A": "LOGSE", "B": "Ley Moyano", "C": "LODE", "D": "LOCE"}, "correct": "A"}, {"num": 18, "question": "¿Cuál de las siguientes enseñanzas NO forma parte de la educación básica española?", "options": {"A": "ESO", "B": "Educación Primaria", "C": "Bachillerato", "D": "Ciclos Formativos de Grado Básico"}, "correct": "C"}, {"num": 19, "question": "Según el artículo 27 de la Constitución Española, señala la respuesta incorrecta:", "options": {"A": "La enseñanza básica debe ser obligatoria y gratuita", "B": "Libertad de creación de centros docentes", "C": "Todos tienen derecho a la educación", "D": "Se reconoce la autonomía de las universidades"}, "correct": "D"}, {"num": 20, "question": "Democratizar la enseñanza significa compensar desigualdades garantizando:", "options": {"A": "Justicia e igualdad", "B": "Inclusión y desigualdad", "C": "Justicia y exclusividad", "D": "Equidad e inclusividad afectiva"}, "correct": "A"}, {"num": 21, "question": "¿Cuál fue la primera ley educativa tras la Constitución de 1978?", "options": {"A": "Ley Moyano", "B": "Ley Villar Palasí", "C": "LODE", "D": "LOPEG"}, "correct": "C"}, {"num": 22, "question": "¿Cuál/es es una de las cinco disciplinas de Senge?", "options": {"A": "Aprendizaje en equipo", "B": "Modelos mentales", "C": "Construcción de una visión compartida", "D": "Todas son correctas"}, "correct": "D"}, {"num": 23, "question": "¿Qué ley introduce las situaciones de aprendizaje?", "options": {"A": "LOMCE", "B": "LODE", "C": "LOMLOE", "D": "LOE"}, "correct": "C"}, {"num": 24, "question": "¿Qué ley introduce la Formación Profesional Básica?", "options": {"A": "LOE", "B": "LOMCE", "C": "LOMLOE", "D": "LOPEG"}, "correct": "B"}, {"num": 25, "question": "¿Cuál es el resultado de la interacción entre todos los elementos y factores de la organización escolar?", "options": {"A": "Cultura", "B": "Identidad cultural", "C": "Motivación", "D": "Clima"}, "correct": "D"}, {"num": 26, "question": "¿Cuál de los siguientes factores no es un componente del clima escolar?", "options": {"A": "Tipo de liderazgo", "B": "Orientación motivacional del centro", "C": "La visión", "D": "Entorno físico del alumno"}, "correct": "C"}, {"num": 27, "question": "¿Qué componente del clima escolar favorece más la disminución del abandono escolar?", "options": {"A": "Orientación motivacional del centro", "B": "Actitudes de los alumnos", "C": "Entorno físico del centro", "D": "Seguridad del alumno"}, "correct": "A"}, {"num": 28, "question": "Uno de los fines de la implantación de la LOMLOE es:", "options": {"A": "Calificación mediante un solo examen", "B": "Fomentar actividades teóricas", "C": "Modernizar el sistema educativo", "D": "Aprendizaje orientado a estudios universitarios"}, "correct": "C"}, {"num": 29, "question": "¿Cuál de las siguientes culturas escolares muestra mayor equilibrio entre estabilidad y cambio?", "options": {"A": "Errante", "B": "En marcha", "C": "Paseante", "D": "Innovadora"}, "correct": "B"}, {"num": 30, "question": "Si decimos que el centro tiene una orientación hacia el aprendizaje, señala cuál NO sería una característica:", "options": {"A": "Importancia a las notas altas", "B": "Entender el valor de lo aprendido", "C": "Aprender de los errores", "D": "Comprender más que memorizar"}, "correct": "A"}, {"num": 31, "question": "¿Qué es cierto respecto al clima escolar?", "options": {"A": "El clima es resultado de la cultura", "B": "Lo crea una sola persona", "C": "Es individual y unidimensional", "D": "No tiene relación con la comunicación"}, "correct": "A"}, {"num": 32, "question": "¿Qué característica NO se relaciona con un liderazgo positivo?", "options": {"A": "Orientación al aprendizaje", "B": "Promueve el servicio", "C": "Comunicación fluida", "D": "Dificulta la cooperación"}, "correct": "D"}, {"num": 33, "question": "¿Qué elementos configuran el perfil de salida del alumnado en educación básica?", "options": {"A": "Valores, competencias y principios", "B": "Competencias clave y específicas", "C": "Perfil ciudadano, valores, competencias y principios", "D": "Competencias clave, criterios de evaluación, saberes básicos y ámbitos"}, "correct": "C"}, {"num": 34, "question": "¿Cuáles son los componentes de una competencia?", "options": {"A": "Saber, saber hacer y saber ser", "B": "Ser, estar o parecer", "C": "Saber hacer y saber aprender", "D": "Estar para aprender"}, "correct": "A"}, {"num": 35, "question": "¿A quién corresponde el desarrollo del régimen de conciertos educativos?", "options": {"A": "Comunidades Autónomas", "B": "Gobierno", "C": "Administraciones locales", "D": "Ninguna"}, "correct": "A"}, {"num": 36, "question": "Definición de Consejo Escolar:", "options": {"A": "Órgano colegiado donde no participan todos los estamentos", "B": "Órgano colegiado donde participan todos los estamentos", "C": "Órgano de coordinación didáctica de secundaria", "D": "Órgano de coordinación didáctica de primaria"}, "correct": "B"}, {"num": 37, "question": "Definición de Claustro de Profesores:", "options": {"A": "Órgano de reunión de evaluación", "B": "Órgano de participación docente", "C": "Órgano de coordinación didáctica de secundaria", "D": "Órgano de coordinación didáctica de primaria"}, "correct": "B"}, {"num": 38, "question": "Definición de Plan de Acción Tutorial:", "options": {"A": "Documento con objetivos y destinatarios", "B": "Marco con objetivos, dinámicas, medios, agentes y destinatarios", "C": "Documento para atender la diversidad", "D": "Ninguna"}, "correct": "B"}, {"num": 39, "question": "Definición de Programación General Anual:", "options": {"A": "Documento de atención a la diversidad", "B": "Documento de gestión y planificación anual", "C": "Documento sin límite temporal", "D": "Documento mensual"}, "correct": "B"}, {"num": 40, "question": "¿De cuántos ciclos consta la ESO?", "options": {"A": "1", "B": "2", "C": "3", "D": "4"}, "correct": "B"}, {"num": 41, "question": "¿Quién compone el equipo directivo de un instituto de 40 unidades?", "options": {"A": "Director, tres jefaturas de estudio y secretaría", "B": "Director, secretaria y jefe de estudios", "C": "Director y jefe de estudios", "D": "Director, jefe de estudios y secretario académico"}, "correct": "A"}, {"num": 42, "question": "La Memoria del Centro se revisa:", "options": {"A": "Tres veces durante el curso", "B": "Al comienzo del curso", "C": "Al final del curso", "D": "Al principio y al final"}, "correct": "C"}, {"num": 43, "question": "Los Ciclos Formativos de Grado Medio pertenecen a:", "options": {"A": "Enseñanza postobligatoria", "B": "Enseñanza obligatoria", "C": "Universidad", "D": "Educación no formal"}, "correct": "A"}, {"num": 44, "question": "¿Quién compone el equipo directivo de un instituto de 15 unidades?", "options": {"A": "Director", "B": "Director, secretaria y jefe de estudios", "C": "Director y jefe de estudios", "D": "Director, jefe de estudios y secretario académico"}, "correct": "B"}, {"num": 45, "question": "¿Cuál es la definición de ámbito en la LOMLOE?", "options": {"A": "Integración globalizada de saberes básicos de varias materias", "B": "Integración de unidades didácticas de una materia", "C": "Conjunto de actividades aplicativas", "D": "Entorno social del centro"}, "correct": "A"}, {"num": 46, "question": "¿En qué Real Decreto se establece el currículo mínimo de ESO?", "options": {"A": "RD 219/2022", "B": "RD 217/2022", "C": "RD 2/2021", "D": "RD 243/2022"}, "correct": "B"}, {"num": 47, "question": "La Programación General Anual se evalúa por:", "options": {"A": "Equipo Directivo", "B": "Consejo Escolar", "C": "Órganos de coordinación didáctica", "D": "Ninguna"}, "correct": "B"}, {"num": 48, "question": "¿Cuáles son las siglas de la competencia matemática?", "options": {"A": "CE", "B": "CC", "C": "STEM", "D": "CM"}, "correct": "C"}, {"num": 49, "question": "¿Qué ley deroga la LOMLOE?", "options": {"A": "LOGSE", "B": "LOMCE", "C": "LOE", "D": "Ninguna"}, "correct": "D"}, {"num": 50, "question": "¿Qué ley modifica la LOE?", "options": {"A": "LOGSE", "B": "LOMCE", "C": "LOE", "D": "Ninguna"}, "correct": "B"}, {"num": 51, "question": "¿Qué elementos componen el equipo directivo?", "options": {"A": "Depende de las unidades del centro", "B": "El claustro de profesores", "C": "El director y los alumnos", "D": "Las AMPAS"}, "correct": "A"}, {"num": 52, "question": "Lenguaje LOMLOE (señala la respuesta incorrecta):", "options": {"A": "Contenidos", "B": "Situaciones de aprendizaje", "C": "Competencias clave", "D": "Saberes básicos"}, "correct": "A"}, {"num": 53, "question": "En la Programación General Anual se incluyen:", "options": {"A": "Horarios y calendario general", "B": "Calendario de evaluación y reuniones de coordinación", "C": "Horario de atención a las familias", "D": "Todas son correctas"}, "correct": "D"}, {"num": 54, "question": "La Memoria del Centro se analiza y evalúa por:", "options": {"A": "Claustro de Profesores", "B": "Consejo Escolar", "C": "Equipo Directivo", "D": "AMPA"}, "correct": "B"}, {"num": 55, "question": "¿Cuáles son las áreas de Educación Secundaria?", "options": {"A": "Lingüística y social; matemática y científica", "B": "Matemática, científica y artística", "C": "Matemáticas, ciencias sociales y artísticas", "D": "En ESO no hay áreas"}, "correct": "D"}, {"num": 56, "question": "¿En qué curso/s de ESO se impartirá Educación en Valores Cívicos y Éticos?", "options": {"A": "En al menos un curso del primer ciclo de ESO", "B": "En todos los cursos de ESO", "C": "En los dos primeros cursos", "D": "Ninguna es correcta"}, "correct": "A"}, {"num": 57, "question": "¿En qué aspectos se reconoce la autonomía en los centros educativos?", "options": {"A": "Pedagógica, organizativa y de gobierno", "B": "Organizativa, pedagógica y de gestión", "C": "Pedagógica y metodológica", "D": "Ninguna"}, "correct": "B"}, {"num": 58, "question": "¿Cuáles son las principales fuentes curriculares?", "options": {"A": "Epistemológica y psicológica", "B": "Socioeconómica y política", "C": "Sociológica y pedagógica", "D": "A y C son correctas"}, "correct": "D"}, {"num": 59, "question": "¿Cuáles son componentes de la estructura curricular en la LOMLOE?", "options": {"A": "Contenidos y actividades", "B": "Perfil de salida y ámbitos", "C": "Materias y áreas", "D": "B y C son correctas"}, "correct": "D"}, {"num": 60, "question": "¿Cuáles son ejes transversales de la LOMLOE?", "options": {"A": "Derechos de la infancia", "B": "Educación digital", "C": "Aprendizaje reflexivo y desarrollo sostenible", "D": "Todas son correctas"}, "correct": "D"}, {"num": 61, "question": "¿Qué porcentaje del horario escolar ocupan las enseñanzas mínimas en comunidades sin lengua cooficial?", "options": {"A": "50%", "B": "55%", "C": "60%", "D": "65%"}, "correct": "D"}, {"num": 62, "question": "¿Qué es la autonomía pedagógica?", "options": {"A": "Experimentaciones, planes de trabajo y ampliaciones horarias", "B": "Gestión económica y presupuestaria", "C": "Decisiones sobre qué enseñar y cómo hacerlo", "D": "Ninguna"}, "correct": "A"}, {"num": 63, "question": "¿Quién preside el Claustro de Profesores?", "options": {"A": "Jefe de Estudios", "B": "Director", "C": "Equipo Directivo", "D": "No existe presidente"}, "correct": "B"}, {"num": 64, "question": "¿Quién aprueba el Proyecto Educativo?", "options": {"A": "Claustro de Profesores", "B": "Consejo Escolar", "C": "Equipo Directivo", "D": "Ninguna"}, "correct": "B"}, {"num": 65, "question": "¿Quién elabora y redacta el Proyecto Educativo?", "options": {"A": "Claustro de Profesores", "B": "Equipo Directivo", "C": "COCOPE", "D": "Ninguna"}, "correct": "B"}, {"num": 66, "question": "¿Quiénes son los órganos colegiados de gobierno en un IES?", "options": {"A": "Equipo Directivo, Consejo Escolar y alumnos", "B": "Alumnos, Equipo Directivo y AMPA", "C": "Claustro de Profesores y Consejo Escolar", "D": "Ninguna"}, "correct": "C"}, {"num": 67, "question": "Según la LOMLOE, los descriptores operativos están ubicados dentro de:", "options": {"A": "Situaciones de aprendizaje", "B": "Competencias clave", "C": "Objetivos de etapa", "D": "Competencias específicas"}, "correct": "B"}, {"num": 68, "question": "Tras la aparición de la LOMLOE, los saberes básicos se publican legislativamente en:", "options": {"A": "No aparecen en el RD", "B": "Introducción del RD", "C": "Anexo II del RD de enseñanzas mínimas", "D": "Anexo I del RD"}, "correct": "C"}, {"num": 69, "question": "¿Quién podrá diseñar e implementar métodos pedagógicos y didácticos propios?", "options": {"A": "Administraciones educativas", "B": "Gobierno", "C": "Centros educativos", "D": "Ministerio de Educación"}, "correct": "C"}, {"num": 70, "question": "¿En qué año entró en vigor la LOGSE?", "options": {"A": "2001", "B": "1990", "C": "2006", "D": "1996"}, "correct": "B"}, {"num": 71, "question": "Regulación de los elementos que determinan los procesos de enseñanza y aprendizaje para cada enseñanza:", "options": {"A": "Bloque", "B": "Competencia", "C": "Currículo", "D": "Curso escolar"}, "correct": "C"}, {"num": 72, "question": "¿Qué ley fue derogada antes de llegar a implantarse completamente?", "options": {"A": "LOMCE", "B": "LOE", "C": "LOCE", "D": "LOGSE"}, "correct": "C"}, {"num": 73, "question": "Respecto a la materia de Religión:", "options": {"A": "Computa para la nota media", "B": "Se evalúa en los mismos términos que las demás materias", "C": "Es voluntaria para los centros", "D": "Tiene alternativa obligatoria llamada Valores Éticos"}, "correct": "B"}, {"num": 74, "question": "Versión consolidada de una ley significa:", "options": {"A": "Ley comparada con otras", "B": "Ley original sin cambios", "C": "Ley actualizada con modificaciones posteriores", "D": "Ley resumida"}, "correct": "C"}, {"num": 75, "question": "¿Cuántos cursos comprende la ESO?", "options": {"A": "Cuatro", "B": "Ocho", "C": "Seis", "D": "Dos"}, "correct": "A"}, {"num": 76, "question": "¿Cuál es un principio de la LOE?", "options": {"A": "Aparición de competencias clave", "B": "Todas son correctas", "C": "Equidad", "D": "Educación obligatoria hasta los 14 años"}, "correct": "C"}, {"num": 77, "question": "¿En qué año entró en vigor la LOE?", "options": {"A": "2006", "B": "2016", "C": "1996", "D": "1986"}, "correct": "A"}, {"num": 78, "question": "Tras la aparición de la LOMLOE, los descriptores operativos se publican en:", "options": {"A": "Introducción del RD", "B": "No aparecen en el RD", "C": "Anexo II", "D": "Anexo I"}, "correct": "D"}, {"num": 79, "question": "¿Dónde suele encontrarse explicitado el currículo estatal?", "options": {"A": "En la ley vigente", "B": "En el Real Decreto de enseñanzas mínimas", "C": "En los decretos curriculares autonómicos", "D": "No se publica"}, "correct": "B"}, {"num": 80, "question": "¿Qué elemento curricular fue exclusivo de la LOMCE?", "options": {"A": "Criterios de evaluación", "B": "Estándares de aprendizaje", "C": "Saberes básicos", "D": "Metodología"}, "correct": "B"}, {"num": 81, "question": "Si hay un concepto que describe el sistema educativo español de las últimas décadas es:", "options": {"A": "Educativo", "B": "Cambiante", "C": "Estable", "D": "Diferente"}, "correct": "B"}, {"num": 82, "question": "La enumeración de los descriptores del Perfil de Salida se encuentra en:", "options": {"A": "Primeros artículos del RD", "B": "Consideraciones finales autonómicas", "C": "No se enumeran", "D": "Anexo I del RD"}, "correct": "D"}, {"num": 83, "question": "Los resultados de aprendizaje son un elemento curricular presente en:", "options": {"A": "Ninguna ley", "B": "LOMCE y LOMLOE en FP", "C": "Solo LOMCE", "D": "Solo LOMLOE"}, "correct": "B"}, {"num": 84, "question": "Ley que sigue vigente hoy aunque modificada:", "options": {"A": "LODE", "B": "LOPEGCE", "C": "LOGSE", "D": "LOCE"}, "correct": "A"}, {"num": 85, "question": "Documento que establece las funciones de los tutores:", "options": {"A": "Plan de Compensación Educativa", "B": "Plan de Acción Tutorial", "C": "Plan de Atención a la Diversidad", "D": "Plan de Gestión"}, "correct": "B"}, {"num": 86, "question": "La responsabilidad de la PGA y la Memoria Final recae inicialmente en:", "options": {"A": "Equipo Directivo", "B": "Comisión de Coordinación Pedagógica", "C": "Claustro", "D": "Consejo Escolar"}, "correct": "A"}, {"num": 87, "question": "El documento mediante el cual los centros articulan su autonomía organizativa es:", "options": {"A": "PMAR", "B": "Presupuestos propios", "C": "Reglamento de Régimen Interior / NOF", "D": "PEC"}, "correct": "C"}, {"num": 88, "question": "¿Qué plan aborda los conflictos del entorno escolar?", "options": {"A": "Plan de Orientación Académica y Profesional", "B": "Plan de Convivencia", "C": "Plan de Transición y Acogida", "D": "Plan de Acción Tutorial"}, "correct": "B"}, {"num": 89, "question": "En el PAT se deben establecer:", "options": {"A": "Funciones del alumnado", "B": "Funciones de los directores", "C": "Funciones de los tutores", "D": "Funciones del conserje"}, "correct": "C"}, {"num": 90, "question": "Documento que lleva asociado un Plan de Mejora revisable:", "options": {"A": "PAT", "B": "PEC", "C": "PAD", "D": "Todas son correctas"}, "correct": "B"}, {"num": 91, "question": "¿Qué documento acaba siendo una suma de documentos y planes del centro?", "options": {"A": "PGA", "B": "Proyecto de Gestión", "C": "Proyecto Educativo de Centro", "D": "Normas de Organización y Funcionamiento"}, "correct": "C"}, {"num": 92, "question": "¿Quién decide sobre la admisión del alumnado?", "options": {"A": "Director", "B": "Equipo Directivo", "C": "Consejo Escolar", "D": "Claustro"}, "correct": "C"}, {"num": 93, "question": "Las concreciones curriculares LOMLOE para ESO y Bachillerato se publicaron en:", "options": {"A": "2022", "B": "2023", "C": "2020", "D": "2021"}, "correct": "A"}, {"num": 94, "question": "¿Qué ley propugnaba el aprendizaje significativo y el constructivismo?", "options": {"A": "LOE", "B": "LOGSE", "C": "LOMCE", "D": "LGE"}, "correct": "B"}, {"num": 95, "question": "¿Qué ley fue abortada tras los acontecimientos del 11-M?", "options": {"A": "LOE", "B": "LOCE", "C": "LOMCE", "D": "LOMLOE"}, "correct": "B"}, {"num": 96, "question": "La LOMCE (2013) es conocida como:", "options": {"A": "Ley Celaá", "B": "Ley Wert", "C": "Ley Moyano", "D": "Ley Villar Palasí"}, "correct": "B"}, {"num": 97, "question": "¿Qué comunidad autónoma dispone de una ley propia de educación?", "options": {"A": "Madrid", "B": "La Rioja", "C": "País Vasco", "D": "Ninguna"}, "correct": "C"}, {"num": 98, "question": "Las cuatro fuentes clásicas del currículo son:", "options": {"A": "Legal, pedagógica, social y psicológica", "B": "Sociológica, epistemológica, psicológica y pedagógica", "C": "Histórica, metodológica, evaluativa y digital", "D": "Normativa, práctica, teórica y experimental"}, "correct": "B"}, {"num": 99, "question": "En 4º de ESO, según la LOMLOE, el alumnado debe cursar:", "options": {"A": "Latín y Griego", "B": "Matemáticas A o Matemáticas B", "C": "Filosofía", "D": "Tecnología obligatoria"}, "correct": "B"}, {"num": 100, "question": "La Ley de Formación Profesional de 2022 establece como elemento curricular:", "options": {"A": "Competencias clave", "B": "Resultados de aprendizaje", "C": "Descriptores operativos", "D": "Situaciones de aprendizaje"}, "correct": "B"}, {"num": 101, "question": "Son centros públicos aquellos cuya titularidad recae en:", "options": {"A": "Centros privados concertados", "B": "Una persona física o jurídica privada", "C": "Todas son correctas", "D": "La Administración Pública"}, "correct": "D"}, {"num": 102, "question": "La prestación del servicio público de la educación se realizará a través de:", "options": {"A": "Los centros públicos y privados concertados", "B": "Cualquier tipo de centro educativo", "C": "Todas son correctas", "D": "Los centros públicos exclusivamente"}, "correct": "A"}, {"num": 103, "question": "¿Qué tipo de centros son aquellos centros privados que realizan un convenio con la administración pública?", "options": {"A": "Centros públicos", "B": "Centros concertados", "C": "Centros privados", "D": "Centros semiprivados"}, "correct": "B"}, {"num": 104, "question": "En los centros concertados:", "options": {"A": "Todas son correctas", "B": "El director titular preside el claustro", "C": "El director pedagógico preside el claustro", "D": "Los alumnos no forman parte del consejo escolar"}, "correct": "C"}, {"num": 105, "question": "Los centros privados concertados deberán incorporar su carácter propio o:", "options": {"A": "Ideario", "B": "Plan de aula", "C": "Pronóstico", "D": "Plan activo"}, "correct": "A"}, {"num": 106, "question": "¿Cuál de los siguientes NO es uno de los cuatro documentos institucionales básicos del centro?", "options": {"A": "Proyecto de Actividades Extraescolares", "B": "Programación General Anual", "C": "Proyecto de Gestión", "D": "Proyecto Educativo"}, "correct": "A"}, {"num": 107, "question": "Los documentos mediante los cuales los centros articulan su autonomía pedagógica y curricular son:", "options": {"A": "PEC", "B": "PAD", "C": "Presupuestos propios", "D": "Normas de organización y funcionamiento"}, "correct": "A"}, {"num": 108, "question": "¿Quién forma parte del Consejo Escolar?", "options": {"A": "Director del centro", "B": "Secretario del centro", "C": "Jefe de estudios", "D": "Todas son correctas"}, "correct": "D"}, {"num": 109, "question": "Órgano colegiado de gobierno a través del cual participan todos los estamentos de la comunidad educativa:", "options": {"A": "Consejo Escolar", "B": "Equipo Directivo", "C": "Comunidad educativa", "D": "Claustro de Profesores"}, "correct": "A"}, {"num": 110, "question": "¿En qué curso de la ESO puede el alumnado comenzar a formar parte del Consejo Escolar?", "options": {"A": "1º ESO", "B": "2º ESO", "C": "4º ESO", "D": "3º ESO"}, "correct": "A"}, {"num": 111, "question": "¿Quién será el presidente del Claustro de Profesores?", "options": {"A": "Director del centro", "B": "Jefe de estudios", "C": "Profesor elegido por el claustro", "D": "Profesor elegido por sorteo"}, "correct": "A"}, {"num": 112, "question": "Establecer el horario que corresponde a cada materia es función propia de:", "options": {"A": "Equipo Directivo", "B": "Consejo Escolar", "C": "Comisión de Coordinación Pedagógica", "D": "Claustro de Profesores"}, "correct": "D"}, {"num": 113, "question": "Elaborar la PGA y la Memoria Final es función propia de:", "options": {"A": "Equipo Directivo", "B": "Comisión de Coordinación Pedagógica", "C": "Consejo Escolar", "D": "Claustro de Profesores"}, "correct": "A"}, {"num": 114, "question": "Figura de gestión en la que los docentes son consultados y oídos:", "options": {"A": "Claustro de Profesores", "B": "Equipo Directivo", "C": "Consejo Escolar", "D": "AMPA"}, "correct": "A"}, {"num": 115, "question": "¿Cuál es una competencia del Claustro de Profesores?", "options": {"A": "Promover investigación pedagógica", "B": "Realizar propuestas para los proyectos del centro", "C": "Definir criterios de orientación y evaluación", "D": "Todas son correctas"}, "correct": "D"}, {"num": 116, "question": "¿Por quién estará integrada la Comisión de Coordinación Pedagógica?", "options": {"A": "Director", "B": "Coordinadores de ciclo/departamento", "C": "Jefe de Estudios", "D": "Todas son correctas"}, "correct": "D"}, {"num": 117, "question": "Por el mero hecho de impartir una materia en la ESO, se pertenece a (señala la que NO proceda):", "options": {"A": "Departamento de Orientación", "B": "Departamento Didáctico", "C": "Equipo Docente", "D": "Claustro de Profesores"}, "correct": "A"}, {"num": 118, "question": "Son funciones del tutor (señala la que NO proceda):", "options": {"A": "Supervisar las programaciones didácticas", "B": "Facilitar la integración del alumnado", "C": "Fomentar cooperación con familias", "D": "Orientar al alumnado"}, "correct": "A"}, {"num": 119, "question": "La forma en la que la administración educativa regula el trabajo de los docentes es a través de:", "options": {"A": "Órganos de coordinación docente", "B": "Asociaciones de padres y madres", "C": "Ninguna es correcta", "D": "Cuentas de correo electrónico corporativas"}, "correct": "A"}, {"num": 120, "question": "¿Qué órgano de coordinación docente no existirá en un instituto de Secundaria?", "options": {"A": "Diversificación", "B": "Departamento de Actividades Complementarias y Extraescolares", "C": "Tutor", "D": "Departamento de Orientación"}, "correct": "A"}, {"num": 121, "question": "¿Cuál de las siguientes NO es una función del director?", "options": {"A": "Estar presente en todos los exámenes del alumnado", "B": "Hacer respetar las normas del centro", "C": "Dirigir y coordinar las actividades del centro", "D": "Realizar contrataciones de obras y servicios"}, "correct": "A"}, {"num": 122, "question": "¿Cuál de las siguientes NO es una función de los tutores?", "options": {"A": "Elaborar Adaptaciones Curriculares", "B": "Orientar y asesorar a los alumnos", "C": "Facilitar la cooperación con las familias", "D": "Organizar y presidir sesiones de evaluación"}, "correct": "A"}, {"num": 123, "question": "¿Cuáles son las formas de abordar la acción tutorial con el alumnado?", "options": {"A": "En grupo e individualmente", "B": "Ninguna es correcta", "C": "Online o presencial", "D": "Solo individualmente"}, "correct": "A"}, {"num": 124, "question": "El PAT debe contener acciones de:", "options": {"A": "Transmisión de valores", "B": "Prevención y resolución de conflictos", "C": "Igualdad efectiva entre hombres y mujeres", "D": "Todas son correctas"}, "correct": "D"}, {"num": 125, "question": "Fijar los criterios referentes a orientación, tutoría, evaluación y recuperación es función propia de:", "options": {"A": "Claustro de Profesores", "B": "Consejo Escolar", "C": "Comisión de Coordinación Pedagógica", "D": "Equipo Directivo"}, "correct": "C"}, {"num": 126, "question": "En caso de impartir asignaturas vinculadas a varios departamentos, el docente pertenecerá:", "options": {"A": "Al que tenga mayor carga lectiva", "B": "Al relacionado con sus estudios universitarios", "C": "Al que le interese más", "D": "A todos los departamentos"}, "correct": "A"}, {"num": 127, "question": "Los profesores con más de una especialidad pertenecerán:", "options": {"A": "Al departamento al que corresponda la plaza ocupada", "B": "Al que les interese más", "C": "Al relacionado con sus estudios universitarios", "D": "A todos los departamentos"}, "correct": "A"}, {"num": 128, "question": "El Proyecto Educativo del Centro articula:", "options": {"A": "La autonomía pedagógica", "B": "La autonomía de gestión", "C": "Ninguna es correcta", "D": "La autonomía organizativa"}, "correct": "A"}, {"num": 129, "question": "¿Qué incluye el Proyecto Educativo?", "options": {"A": "Plan de convivencia", "B": "Acción tutorial", "C": "Atención a la diversidad", "D": "Todas son correctas"}, "correct": "D"}, {"num": 130, "question": "¿Qué documento recoge los valores, objetivos y prioridades de actuación del centro?", "options": {"A": "Proyecto Educativo", "B": "Normas de organización y funcionamiento", "C": "PGA", "D": "Proyecto de Gestión"}, "correct": "A"}, {"num": 131, "question": "Constituye las señas de identidad del centro docente:", "options": {"A": "Proyecto Educativo", "B": "PGA", "C": "Normas de organización", "D": "Proyecto de Gestión"}, "correct": "A"}, {"num": 132, "question": "La autonomía pedagógica tiene relación directa con:", "options": {"A": "Las concreciones curriculares", "B": "Reglamento de Régimen Interior", "C": "Proyecto de Gestión", "D": "Proyecto de Dirección"}, "correct": "A"}, {"num": 133, "question": "Las normas de convivencia están vinculadas principalmente a la autonomía:", "options": {"A": "Organizativa", "B": "De gestión", "C": "Ninguna", "D": "Pedagógica"}, "correct": "A"}, {"num": 134, "question": "Constituye un documento de planificación permanente:", "options": {"A": "Proyecto Educativo", "B": "Memoria Final", "C": "PGA", "D": "Calendario escolar"}, "correct": "A"}, {"num": 135, "question": "El documento fundamental mediante el cual los centros articulan su autonomía organizativa es:", "options": {"A": "Normas de Organización y Funcionamiento", "B": "Normas morales", "C": "Normas pedagógicas", "D": "Presupuestos propios"}, "correct": "A"}, {"num": 136, "question": "¿Qué documento recoge la ordenación y utilización de los recursos materiales y humanos del centro?", "options": {"A": "Plan de Gestión", "B": "PAT", "C": "PAD", "D": "Plan de Compensación Educativa"}, "correct": "A"}, {"num": 137, "question": "Conjunto de normas internas de funcionamiento del centro:", "options": {"A": "Reglamento de Régimen Interior", "B": "Reglamento de Recursos", "C": "Reglamento Funcional", "D": "Reglamento Exterior"}, "correct": "A"}, {"num": 138, "question": "Documento institucional que cierra la planificación prevista en la PGA:", "options": {"A": "Memoria Anual del Centro", "B": "PAT", "C": "PAD", "D": "Plan de Acogida"}, "correct": "A"}, {"num": 139, "question": "Responde a una planificación del centro a corto plazo:", "options": {"A": "PGA", "B": "PA", "C": "PMAR", "D": "PEC"}, "correct": "A"}, {"num": 140, "question": "¿Qué NO aparece recogido en una PGA?", "options": {"A": "Horario de Escuela de Padres", "B": "Programa anual de actividades extraescolares", "C": "Calendario de reuniones", "D": "Horario del alumnado"}, "correct": "A"}, {"num": 141, "question": "¿Cuál de estos documentos NO forma parte de la PGA?", "options": {"A": "Rendición de cuentas anuales", "B": "Medidas de atención a la diversidad", "C": "Plan de convivencia", "D": "PAT"}, "correct": "A"}, {"num": 142, "question": "¿Qué documento se elabora en los dos primeros meses del curso?", "options": {"A": "PGA", "B": "NOF", "C": "Proyecto de Gestión", "D": "PEC"}, "correct": "A"}, {"num": 143, "question": "La PGA es un documento:", "options": {"A": "De carácter contingente", "B": "Permanente", "C": "Presupuestario", "D": "Emitido por inspección"}, "correct": "A"}, {"num": 144, "question": "¿En qué momento deben elaborar los centros la PGA?", "options": {"A": "Al principio del curso", "B": "Al final del curso anterior", "C": "Durante verano", "D": "Al final del curso"}, "correct": "A"}, {"num": 145, "question": "El Plan de Acción Tutorial supone:", "options": {"A": "Sistematización de la acción tutorial", "B": "Organización de la orientación académica", "C": "Gestión económica del centro", "D": "Plan de convivencia"}, "correct": "A"}, {"num": 146, "question": "¿Cuál de las siguientes NO es una medida de Atención a la Diversidad?", "options": {"A": "Asignación de tutor a cada grupo", "B": "Desdoblamiento de grupos", "C": "Programas de refuerzo", "D": "Integración de materias en ámbitos"}, "correct": "A"}, {"num": 147, "question": "Documento que contempla adaptaciones curriculares, apoyos y agrupamientos flexibles:", "options": {"A": "PAD", "B": "PAT", "C": "PGA", "D": "PEC"}, "correct": "A"}, {"num": 148, "question": "La Atención a la Diversidad se inspira en:", "options": {"A": "La equidad", "B": "La escuela inclusiva", "C": "El Diseño Universal para el Aprendizaje", "D": "Todas son correctas"}, "correct": "D"}, {"num": 149, "question": "¿Qué órgano coordina las acciones de los tutores?", "options": {"A": "Jefatura de Estudios", "B": "Departamento de Orientación", "C": "CCP", "D": "Consejo Escolar"}, "correct": "B"}, {"num": 150, "question": "¿Quién NO forma parte habitualmente del Consejo Escolar?", "options": {"A": "Representante del alumnado", "B": "Representante del PAS", "C": "Representante del Ayuntamiento", "D": "Responsable de seguridad del centro"}, "correct": "D"}, {"num": 151, "question": "¿Qué comprende la Educación Básica según la LOMLOE?", "options": {"A": "Primaria y ESO", "B": "Formación Profesional", "C": "Todas son incorrectas", "D": "Programas de Garantía Social"}, "correct": "A"}, {"num": 152, "question": "¿Cuál de las siguientes leyes NO sigue vigente actualmente?", "options": {"A": "LOMCE", "B": "LODE", "C": "LOE", "D": "LOMLOE"}, "correct": "A"}, {"num": 153, "question": "Se trata de un elemento curricular exclusivo de la LOMLOE:", "options": {"A": "Situaciones de aprendizaje", "B": "Estándares de aprendizaje", "C": "Contenidos", "D": "Objetivos generales"}, "correct": "A"}, {"num": 154, "question": "¿Cuál fue la primera ley educativa española que permaneció vigente durante más de 100 años?", "options": {"A": "Ley General de Educación", "B": "LOGSE", "C": "Ley Moyano", "D": "LOE"}, "correct": "C"}, {"num": 155, "question": "La LODE (1985) se caracteriza por ser:", "options": {"A": "La primera ley educativa de la democracia", "B": "La ley que estableció la ESO", "C": "La primera ley consensuada tras la Constitución", "D": "La ley que eliminó los centros concertados"}, "correct": "C"}, {"num": 156, "question": "Los saberes básicos de la LOMLOE sustituyen a:", "options": {"A": "Competencias específicas", "B": "Criterios de evaluación", "C": "Contenidos", "D": "Objetivos"}, "correct": "C"}, {"num": 157, "question": "En la estructura de los Reales Decretos de la LOMLOE, las materias se desarrollan en:", "options": {"A": "Anexo I", "B": "Anexo II", "C": "Anexo III", "D": "Anexo IV"}, "correct": "B"}, {"num": 158, "question": "¿Cuál es una novedad curricular propia de la LOMLOE?", "options": {"A": "Reválidas al final de etapa", "B": "Competencias específicas vinculadas a materias", "C": "Eliminación de la tutoría", "D": "Supresión del Bachillerato"}, "correct": "B"}, {"num": 159, "question": "En la LOMLOE, la promoción en ESO requiere:", "options": {"A": "Superar todas las materias", "B": "Aprobar obligatoriamente Lengua y Matemáticas", "C": "Decisión colegiada basada en competencias y objetivos", "D": "Superar una prueba externa"}, "correct": "C"}, {"num": 160, "question": "El Consejo Orientador en ESO se entrega:", "options": {"A": "En 1º y 3º ESO", "B": "En 2º y 4º ESO", "C": "Solo en 4º ESO", "D": "En todos los cursos"}, "correct": "D"}, {"num": 161, "question": "La LOMLOE propone un modelo pedagógico basado en:", "options": {"A": "Memorización y repetición", "B": "Modelo competencial", "C": "Exámenes estandarizados externos", "D": "Enseñanza tradicional de contenidos"}, "correct": "B"}, {"num": 162, "question": "En los Reales Decretos de la LOMLOE, las orientaciones para diseñar Situaciones de Aprendizaje se encuentran en:", "options": {"A": "Anexo I", "B": "Anexo II", "C": "Anexo III", "D": "Anexo IV"}, "correct": "C"}, {"num": 163, "question": "Los objetivos generales de etapa aparecen en:", "options": {"A": "Anexo I", "B": "El articulado del Real Decreto", "C": "Anexo II", "D": "Proyecto Educativo"}, "correct": "B"}, {"num": 164, "question": "El Perfil de Salida se compone de:", "options": {"A": "Competencias clave y descriptores operativos", "B": "Saberes básicos y criterios de evaluación", "C": "Objetivos e indicadores de logro", "D": "Estándares de aprendizaje"}, "correct": "A"}, {"num": 165, "question": "¿Qué función NO corresponde al Consejo Escolar?", "options": {"A": "Aprobar el proyecto de presupuesto", "B": "Conocer candidaturas a la dirección", "C": "Imponer sanciones disciplinarias directas", "D": "Decidir sobre la admisión del alumnado"}, "correct": "C"}, {"num": 166, "question": "¿Quién designa a los miembros del Equipo Directivo?", "options": {"A": "Director", "B": "Claustro", "C": "Consejo Escolar", "D": "Administración Educativa"}, "correct": "A"}, {"num": 167, "question": "¿Qué departamento es responsable del PAT?", "options": {"A": "Departamento de Orientación", "B": "Departamento Didáctico", "C": "TIC", "D": "Convivencia"}, "correct": "A"}, {"num": 168, "question": "¿Quién es el responsable último de la gestión económica del centro?", "options": {"A": "Director", "B": "Jefe de Estudios", "C": "Secretario", "D": "Consejo Escolar"}, "correct": "A"}, {"num": 169, "question": "Lo que el estudiante escucha del profesor se memoriza mejor que aquello que descubre por sí mismo:", "options": {"A": "Verdadero", "B": "Falso"}, "correct": "B"}, {"num": 170, "question": "En Primaria según la LOGSE, la metodología se orientará:", "options": {"A": "A las áreas científicas", "B": "Al juego exclusivamente", "C": "Al desarrollo general del alumno integrando experiencias y aprendizajes", "D": "Al trabajo emocional"}, "correct": "C"}, {"num": 171, "question": "Un centro educativo privado se caracteriza principalmente por:", "options": {"A": "Dependencia económica del Estado", "B": "Mayor autonomía organizativa y de gestión", "C": "Participación obligatoria de toda la comunidad", "D": "Menor competitividad"}, "correct": "B"}, {"num": 172, "question": "La Memoria Anual solo se envía a la Administración cuando la solicita:", "options": {"A": "Verdadero", "B": "Falso"}, "correct": "B"}, {"num": 173, "question": "La tendencia actual de las escuelas es hacia modelos:", "options": {"A": "Disciplinarios", "B": "Interdisciplinarios", "C": "Multidisciplinarios", "D": "Transdisciplinarios"}, "correct": "D"}, {"num": 174, "question": "En las escuelas innovadoras respecto a los espacios:", "options": {"A": "Se favorece el trabajo cooperativo", "B": "El aprendizaje ocurre en cualquier lugar", "C": "Hay participación en espacios digitales", "D": "Todas son correctas"}, "correct": "D"}, {"num": 175, "question": "Cuando un estudiante comparte sus reflexiones aprende más:", "options": {"A": "Verdadero", "B": "Falso"}, "correct": "A"}, {"num": 176, "question": "¿Qué fue el Libro Blanco de 1969?", "options": {"A": "Una reforma educativa", "B": "Una ley educativa", "C": "Una recopilación estadística", "D": "Un informe diagnóstico del sistema educativo"}, "correct": "D"}, {"num": 177, "question": "El centro escolar se caracteriza por:", "options": {"A": "Tener múltiples objetivos", "B": "Recibir multitud de demandas", "C": "Dificultad para evaluarse rigurosamente", "D": "Todas son correctas"}, "correct": "D"}, {"num": 178, "question": "La acción educativa del profesorado se desarrolla:", "options": {"A": "Individualmente", "B": "Coordinada y planificada mediante documentos institucionales", "C": "Según criterio personal", "D": "De forma espontánea"}, "correct": "B"}, {"num": 179, "question": "El Plan de Convivencia puede considerarse relacionado especialmente con el RRI:", "options": {"A": "Verdadero", "B": "Falso"}, "correct": "A"}, {"num": 180, "question": "En una organización innovadora:", "options": {"A": "Se trabaja por proyectos y estructuras flexibles", "B": "Es una organización burocrática", "C": "Se centra en jerarquías rígidas", "D": "Mantiene estructuras tradicionales"}, "correct": "A"}, {"num": 181, "question": "En los espacios abiertos e interconectados:", "options": {"A": "Disminuye la concentración", "B": "Se favorece la productividad y concentración", "C": "Aumenta el ruido necesariamente", "D": "Se eliminan los aprendizajes individuales"}, "correct": "B"}, {"num": 182, "question": "Los conductistas centraron sus investigaciones en experimentos con animales:", "options": {"A": "Verdadero", "B": "Falso"}, "correct": "A"}, {"num": 183, "question": "Los ciclos de Formación Profesional son:", "options": {"A": "Grado Medio y Superior", "B": "Grado Inicial y Avanzado", "C": "Grado Básico y Profesional", "D": "Grado Primario y Secundario"}, "correct": "A"}, {"num": 184, "question": "Los objetivos de un centro educativo son:", "options": {"A": "Propósitos institucionales", "B": "Recursos organizativos", "C": "Normas de convivencia", "D": "Estructuras administrativas"}, "correct": "A"}, {"num": 185, "question": "Los planes específicos son independientes del PEC:", "options": {"A": "Verdadero", "B": "Falso"}, "correct": "B"}, {"num": 186, "question": "Las relaciones organizativas se sustentan en:", "options": {"A": "Recursos materiales exclusivamente", "B": "Recursos e información", "C": "Información exclusivamente", "D": "Recursos económicos exclusivamente"}, "correct": "B"}, {"num": 187, "question": "El uso móvil del tiempo semanal permite:", "options": {"A": "Actividades interdisciplinares", "B": "Unificación de horarios", "C": "Salidas didácticas", "D": "Todas son correctas"}, "correct": "D"}, {"num": 188, "question": "Paciencia y veracidad son condiciones del encuentro según López:", "options": {"A": "Verdadero", "B": "Falso"}, "correct": "A"}, {"num": 189, "question": "La educación no formal se caracteriza por:", "options": {"A": "Titulación oficial obligatoria", "B": "Estructurada y planificada sin certificación oficial", "C": "Ser espontánea e informal", "D": "Seguir siempre el currículo estatal"}, "correct": "B"}, {"num": 190, "question": "La interdisciplinariedad es:", "options": {"A": "Estrategia de programación", "B": "Estrategia organizativa", "C": "Interacción de disciplinas para generar conocimiento nuevo", "D": "Método de evaluación"}, "correct": "C"}, {"num": 191, "question": "El patio puede considerarse el \"tercer profesor\" porque:", "options": {"A": "Constituye un entorno de aprendizaje", "B": "Permite impartir clases", "C": "Los alumnos pasan mucho tiempo allí", "D": "Favorece el deporte"}, "correct": "A"}, {"num": 192, "question": "La lectura favorece la reflexión crítica:", "options": {"A": "Verdadero", "B": "Falso"}, "correct": "A"}, {"num": 193, "question": "Los componentes del centro escolar son:", "options": {"A": "Objetivos y recursos", "B": "Estructura y entorno", "C": "Tecnología y cultura", "D": "Todas son correctas"}, "correct": "D"}, {"num": 194, "question": "Los planes específicos se enmarcan en la autonomía e innovación de los centros:", "options": {"A": "Verdadero", "B": "Falso"}, "correct": "A"}, {"num": 195, "question": "La multidisciplinariedad implica abordar varias disciplinas de modo:", "options": {"A": "Integrador", "B": "No integrador", "C": "Formal", "D": "Experimental"}, "correct": "B"}, {"num": 196, "question": "En la enseñanza graduada:", "options": {"A": "Existe máxima flexibilidad", "B": "Se supone igualdad de ritmo y madurez", "C": "Se individualiza totalmente el currículo", "D": "No existen grupos"}, "correct": "B"}, {"num": 197, "question": "Según García Hoz y Medina, la escuela es:", "options": {"A": "Una entidad administrativa", "B": "Una comunidad de maestros y alumnos dedicada a educar", "C": "Un sistema burocrático", "D": "Un servicio social"}, "correct": "B"}, {"num": 198, "question": "En algunos espacios innovadores, la \"cueva\" es:", "options": {"A": "El núcleo central", "B": "Zona experimental", "C": "Espacio de trabajo individual y concentración", "D": "Espacio deportivo"}, "correct": "C"}, {"num": 199, "question": "¿Qué ley es conocida como Ley Wert?", "options": {"A": "LOE", "B": "LOGSE", "C": "LOMCE", "D": "LOMLOE"}, "correct": "C"}, {"num": 200, "question": "¿Qué ley fue denunciada y sustituida antes de llegar a aplicarse?", "options": {"A": "LOGSE", "B": "LOECE", "C": "LODE", "D": "LOPEGCE"}, "correct": "B"}, {"num": 201, "question": "¿Qué ley educativa abordó principalmente la participación y el gobierno de los centros?", "options": {"A": "LOGSE", "B": "LOPEGCE", "C": "LOE", "D": "LOMCE"}, "correct": "B"}, {"num": 202, "question": "¿Cuántas competencias básicas dejó la LOMCE tras la reducción realizada respecto a la LOE?", "options": {"A": "5", "B": "6", "C": "7", "D": "8"}, "correct": "C"}, {"num": 203, "question": "¿Qué ley amplió la escolaridad obligatoria desde los 6 hasta los 14 años?", "options": {"A": "Ley Moyano", "B": "LOGSE", "C": "LGE", "D": "LOMLOE"}, "correct": "C"}, {"num": 204, "question": "¿Qué ley establece un sistema integral de Formación Profesional y Cualificaciones?", "options": {"A": "LOE", "B": "LOMCE", "C": "LOCE", "D": "LOCFP"}, "correct": "D"}, {"num": 205, "question": "¿A quién corresponde el desarrollo del régimen de conciertos a partir de la regulación estatal?", "options": {"A": "Comunidades Autónomas", "B": "Gobierno Central", "C": "Administraciones Locales", "D": "Ninguna de las anteriores"}, "correct": "A"}, {"num": 206, "question": "¿Quién compone el equipo directivo en un instituto de 40 unidades?", "options": {"A": "Director, tres jefaturas y secretaría académica", "B": "Director y jefe de estudios", "C": "Director, secretaria y jefe de estudios", "D": "Director, jefe de estudios y secretario académico"}, "correct": "A"}, {"num": 207, "question": "¿Cuáles son las siglas oficiales de la Competencia Matemática y Competencia en Ciencia, Tecnología e Ingeniería?", "options": {"A": "CE", "B": "CC", "C": "STEM", "D": "CM"}, "correct": "C"}, {"num": 208, "question": "¿En qué curso o cursos de ESO se impartirá obligatoriamente Educación en Valores Cívicos y Éticos?", "options": {"A": "En todos los cursos de ESO", "B": "En los dos primeros cursos", "C": "En al menos un curso de la etapa", "D": "Ninguna es correcta"}, "correct": "C"}, {"num": 209, "question": "¿Quién redacta y elabora inicialmente el Proyecto Educativo?", "options": {"A": "Claustro de Profesores", "B": "Equipo Directivo", "C": "Consejo Escolar", "D": "CCP"}, "correct": "B"}, {"num": 210, "question": "¿Qué órgano elabora la propuesta inicial del Plan de Acción Tutorial?", "options": {"A": "Equipo Directivo", "B": "Claustro de Profesores", "C": "Departamento de Orientación", "D": "Comisión de Coordinación Pedagógica"}, "correct": "C"}, {"num": 211, "question": "¿Cuál es el último nivel de concreción curricular que desarrolla el profesorado?", "options": {"A": "Guía didáctica", "B": "Programación anual", "C": "Propuesta curricular", "D": "Programación didáctica de aula"}, "correct": "D"}, {"num": 212, "question": "¿En qué artículo de la Constitución Española se recoge el derecho a la educación?", "options": {"A": "Artículo 17", "B": "Artículo 19", "C": "Artículo 27", "D": "Artículo 29"}, "correct": "C"}, {"num": 213, "question": "La evaluación del aprendizaje del alumnado en los ciclos formativos se realiza por:", "options": {"A": "Objetivos específicos", "B": "Asignaturas", "C": "Familias profesionales", "D": "Módulos profesionales"}, "correct": "D"}, {"num": 214, "question": "¿Qué evaluación tiene carácter informativo y no tiene consecuencias académicas directas?", "options": {"A": "Evaluación ordinaria", "B": "Evaluación extraordinaria", "C": "Evaluación de diagnóstico", "D": "Evaluación continua"}, "correct": "C"}, {"num": 215, "question": "Según el diseño curricular LOMLOE, cualquier competencia específica tiene conexión directa con:", "options": {"A": "Criterios de evaluación y descriptores del perfil de salida", "B": "Objetivos de etapa y descriptores operativos", "C": "Saberes básicos y objetivos de etapa", "D": "Competencias clave y objetivos de etapa"}, "correct": "A"}, {"num": 216, "question": "¿Qué elemento curricular de FP describe lo que el alumnado es capaz de saber, comprender y hacer?", "options": {"A": "Competencias profesionales", "B": "Resultados de aprendizaje", "C": "Contenidos básicos", "D": "Criterios de evaluación"}, "correct": "B"}, {"num": 217, "question": "¿Cuál de las siguientes opciones NO recoge legislativamente las competencias clave?", "options": {"A": "Proyecto Educativo de Centro", "B": "Anexo I del RD de enseñanzas mínimas", "C": "Introducción del RD", "D": "Decretos autonómicos"}, "correct": "A"}, {"num": 218, "question": "¿En qué artículo del Real Decreto aparecen los objetivos de etapa?", "options": {"A": "Artículo 7", "B": "Artículo 5", "C": "Artículo 6", "D": "Artículo 8"}, "correct": "A"}, {"num": 219, "question": "¿Qué plan aborda la adaptación del alumnado procedente de Primaria a Secundaria?", "options": {"A": "Plan de Acogida", "B": "Plan de Transición", "C": "Plan de Orientación Académica", "D": "Plan de Convivencia"}, "correct": "B"}, {"num": 220, "question": "¿Quién NO forma parte habitualmente del Consejo Escolar?", "options": {"A": "Representante del alumnado", "B": "Representante del PAS", "C": "Representante del Ayuntamiento", "D": "Responsable de seguridad"}, "correct": "D"}, {"num": 221, "question": "¿Por quién está compuesto el Equipo Directivo en su configuración básica?", "options": {"A": "Director, Secretario y Jefe de Estudios", "B": "Director y Secretario", "C": "Secretario y PAS", "D": "Director y Claustro"}, "correct": "A"}, {"num": 222, "question": "¿Qué ley es conocida como la Ley Celaá?", "options": {"A": "LOE", "B": "LOGSE", "C": "LOMLOE", "D": "LOMCE"}, "correct": "C"}, {"num": 223, "question": "¿Qué ley es conocida como la Ley Villar Palasí?", "options": {"A": "LGE", "B": "LOE", "C": "LOGSE", "D": "LODE"}, "correct": "A"}, {"num": 224, "question": "¿Qué ley educativa introdujo la EGB?", "options": {"A": "LOGSE", "B": "LGE", "C": "LOE", "D": "LODE"}, "correct": "B"}, {"num": 225, "question": "¿Qué ley educativa introdujo la ESO?", "options": {"A": "LOE", "B": "LOMCE", "C": "LOGSE", "D": "LODE"}, "correct": "C"}, {"num": 226, "question": "¿Qué ley educativa estableció por primera vez los centros concertados?", "options": {"A": "LOGSE", "B": "LODE", "C": "LOE", "D": "LGE"}, "correct": "B"}, {"num": 227, "question": "¿Qué ley educativa introdujo el Departamento de Orientación?", "options": {"A": "LGE", "B": "LODE", "C": "LOGSE", "D": "LOE"}, "correct": "C"}, {"num": 228, "question": "¿Qué ley educativa estableció la escolarización obligatoria hasta los 16 años?", "options": {"A": "LGE", "B": "LOGSE", "C": "LOE", "D": "LODE"}, "correct": "B"}, {"num": 229, "question": "¿Qué ley introdujo los estándares de aprendizaje evaluables?", "options": {"A": "LOE", "B": "LOGSE", "C": "LOMCE", "D": "LOMLOE"}, "correct": "C"}, {"num": 230, "question": "¿Qué ley eliminó los estándares de aprendizaje evaluables?", "options": {"A": "LOE", "B": "LOMCE", "C": "LOGSE", "D": "LOMLOE"}, "correct": "D"}, {"num": 231, "question": "¿Qué ley educativa introdujo los saberes básicos?", "options": {"A": "LOE", "B": "LOGSE", "C": "LOMLOE", "D": "LOMCE"}, "correct": "C"}, {"num": 232, "question": "¿Qué ley educativa introdujo las competencias específicas?", "options": {"A": "LOE", "B": "LOMCE", "C": "LOGSE", "D": "LOMLOE"}, "correct": "D"}, {"num": 233, "question": "¿Qué documento recoge las señas de identidad de un centro educativo?", "options": {"A": "PGA", "B": "Proyecto Educativo", "C": "PAT", "D": "Plan de Gestión"}, "correct": "B"}, {"num": 234, "question": "¿Qué documento recoge la planificación anual del centro?", "options": {"A": "PGA", "B": "PAT", "C": "PAD", "D": "PEC"}, "correct": "A"}, {"num": 235, "question": "¿Qué documento recoge las normas internas de funcionamiento?", "options": {"A": "PEC", "B": "PAT", "C": "RRI / NOF", "D": "PGA"}, "correct": "C"}, {"num": 236, "question": "¿Qué documento recoge la gestión económica y de recursos?", "options": {"A": "PEC", "B": "Plan de Gestión", "C": "PAT", "D": "PGA"}, "correct": "B"}, {"num": 237, "question": "¿Qué documento recoge las actuaciones de tutoría?", "options": {"A": "PAT", "B": "PAD", "C": "PGA", "D": "PEC"}, "correct": "A"}, {"num": 238, "question": "¿Qué documento recoge las medidas de inclusión y atención educativa?", "options": {"A": "PAT", "B": "PAD", "C": "PGA", "D": "Proyecto de Gestión"}, "correct": "B"}, {"num": 239, "question": "¿Qué documento cierra la planificación anual?", "options": {"A": "PGA", "B": "Proyecto Educativo", "C": "Memoria Final", "D": "PAT"}, "correct": "C"}, {"num": 240, "question": "¿Quién preside el Consejo Escolar?", "options": {"A": "Director", "B": "Secretario", "C": "Jefe de Estudios", "D": "Inspector"}, "correct": "A"}, {"num": 241, "question": "¿Quién preside la Comisión de Coordinación Pedagógica?", "options": {"A": "Director", "B": "Jefe de Estudios", "C": "Secretario", "D": "Inspector"}, "correct": "A"}, {"num": 242, "question": "¿Quién coordina la actividad académica y docente del centro?", "options": {"A": "Secretario", "B": "Director", "C": "Jefe de Estudios", "D": "Consejo Escolar"}, "correct": "C"}, {"num": 243, "question": "¿Quién gestiona administrativamente la documentación oficial del centro?", "options": {"A": "Director", "B": "Secretario", "C": "Jefe de Estudios", "D": "Tutor"}, "correct": "B"}, {"num": 244, "question": "¿Cuál es el principal órgano de participación del profesorado?", "options": {"A": "Consejo Escolar", "B": "Claustro", "C": "Equipo Directivo", "D": "CCP"}, "correct": "B"}, {"num": 245, "question": "¿Cuál es el principal órgano colegiado de gobierno?", "options": {"A": "Claustro", "B": "Consejo Escolar", "C": "Equipo Directivo", "D": "Departamento Didáctico"}, "correct": "B"}, {"num": 246, "question": "¿Qué órgano coordina los aspectos pedagógicos generales?", "options": {"A": "CCP", "B": "Claustro", "C": "Consejo Escolar", "D": "Tutoría"}, "correct": "A"}, {"num": 247, "question": "¿Qué órgano coordina las programaciones didácticas?", "options": {"A": "Departamentos Didácticos", "B": "Consejo Escolar", "C": "Claustro", "D": "Equipo Directivo"}, "correct": "A"}, {"num": 248, "question": "¿Qué plan regula la convivencia escolar?", "options": {"A": "PAT", "B": "Plan de Convivencia", "C": "PAD", "D": "PGA"}, "correct": "B"}, {"num": 249, "question": "¿Qué plan regula la orientación académica y profesional?", "options": {"A": "POAP", "B": "PAT", "C": "PAD", "D": "PEC"}, "correct": "A"}, {"num": 250, "question": "¿Qué documento constituye el marco de referencia pedagógico del centro?", "options": {"A": "PGA", "B": "Proyecto Educativo", "C": "Plan de Gestión", "D": "Memoria Final"}, "correct": "B"}, {"num": 251, "question": "Según el diseño curricular de la LOMLOE, cualquier competencia específica de materia tiene conexión curricular directa con:", "options": {"A": "Los criterios de evaluación y los descriptores del perfil de salida.", "B": "Los objetivos de etapa y los descriptores operativos.", "C": "Los saberes básicos y los objetivos de etapa.", "D": "Las competencias clave y los objetivos de etapa."}, "correct": "A"}, {"num": 252, "question": "¿Qué elemento curricular de Formación Profesional describe de manera concreta lo que el alumnado es capaz de saber, comprender y hacer?", "options": {"A": "Competencias profesionales.", "B": "Resultados de aprendizaje.", "C": "Contenidos básicos.", "D": "Criterios de evaluación."}, "correct": "B"}, {"num": 253, "question": "¿Cuál de las siguientes opciones NO recoge legislativamente las competencias clave de la LOMLOE?", "options": {"A": "Proyecto Educativo de Centro.", "B": "Anexo I del Real Decreto de enseñanzas mínimas.", "C": "Introducción del Real Decreto de enseñanzas mínimas.", "D": "Decretos autonómicos."}, "correct": "A"}, {"num": 254, "question": "¿En qué artículo del Real Decreto de enseñanzas mínimas aparecen los objetivos de etapa?", "options": {"A": "Artículo 7.", "B": "Artículo 5.", "C": "Artículo 6.", "D": "Artículo 8."}, "correct": "A"}, {"num": 255, "question": "¿Qué órgano coordina específicamente las acciones de los tutores?", "options": {"A": "Jefatura de Estudios.", "B": "Departamento de Orientación.", "C": "Comisión de Coordinación Pedagógica.", "D": "Equipo Directivo."}, "correct": "B"}, {"num": 256, "question": "¿Qué plan aborda la adaptación del alumnado procedente de Primaria a Secundaria?", "options": {"A": "Plan de Acogida.", "B": "Plan de Transición.", "C": "Plan de Orientación Académica.", "D": "Plan de Convivencia."}, "correct": "B"}, {"num": 257, "question": "¿Quién NO forma parte habitualmente del Consejo Escolar?", "options": {"A": "Representante del alumnado.", "B": "Representante del PAS.", "C": "Representante del Ayuntamiento.", "D": "Responsable de seguridad del centro."}, "correct": "D"}, {"num": 258, "question": "¿Por quién está compuesto el Equipo Directivo en su configuración básica?", "options": {"A": "Director/a, Secretario/a y Jefe/a de Estudios.", "B": "Director/a, Vicedirector/a y Secretario/a.", "C": "Secretario/a, PAS y Jefatura de Estudios.", "D": "Jefatura de Estudios y Departamentos Didácticos."}, "correct": "A"}, {"num": 259, "question": "¿Qué plan NO debe incluir actuaciones relacionadas con la reevaluación de asignaturas del alumnado tutorizado?", "options": {"A": "Plan de Acción Tutorial.", "B": "Plan de Atención a la Diversidad.", "C": "Plan de Convivencia.", "D": "Proyecto Educativo."}, "correct": "C"}, {"num": 260, "question": "¿Qué ley es conocida como la \"Ley Wert\"?", "options": {"A": "LOE.", "B": "LOGSE.", "C": "LOMCE.", "D": "LOMLOE."}, "correct": "C"}, {"num": 261, "question": "¿Qué ley fue denunciada y sustituida antes de llegar a aplicarse?", "options": {"A": "LOGSE.", "B": "LOECE.", "C": "LODE.", "D": "LOPEGCE."}, "correct": "B"}, {"num": 262, "question": "¿Qué ley educativa abordó principalmente la participación y el gobierno de los centros?", "options": {"A": "LOGSE.", "B": "LOPEGCE.", "C": "LOE.", "D": "LOMCE."}, "correct": "B"}, {"num": 263, "question": "¿Cuántas competencias básicas dejó la LOMCE tras la reducción realizada respecto a la LOE?", "options": {"A": "5.", "B": "6.", "C": "7.", "D": "8."}, "correct": "C"}, {"num": 264, "question": "¿Qué ley amplió la escolaridad obligatoria desde los 6 hasta los 14 años?", "options": {"A": "Ley Moyano.", "B": "LOGSE.", "C": "LGE.", "D": "LOMLOE."}, "correct": "C"}, {"num": 265, "question": "Según el artículo 27 de la Constitución Española, se reconoce:", "options": {"A": "Solo la libertad de enseñanza.", "B": "El derecho a la educación y la libertad de enseñanza.", "C": "Solo la obligatoriedad de la enseñanza básica.", "D": "Exclusivamente la autonomía universitaria."}, "correct": "B"}, {"num": 266, "question": "¿Qué comprende la Educación Básica según la LOMLOE?", "options": {"A": "Primaria y ESO.", "B": "Formación Profesional.", "C": "Todas son incorrectas.", "D": "Programas de Garantía Social."}, "correct": "A"}, {"num": 267, "question": "¿Cuál de las siguientes NO es un elemento transversal de la LOMLOE?", "options": {"A": "Educación cívica y constitucional.", "B": "Comprensión lectora.", "C": "Expresión oral pero no escrita.", "D": "Tecnologías de la información y comunicación."}, "correct": "C"}, {"num": 268, "question": "¿Qué elementos configuran el Perfil de Salida del alumnado en educación básica?", "options": {"A": "Perfil del ciudadano que se quiere formar en valores, competencias y principios.", "B": "Educación igualitaria.", "C": "Valores y principios.", "D": "Competencias clave, criterios, saberes y ámbitos."}, "correct": "A"}, {"num": 269, "question": "¿Cuál de las siguientes leyes NO sigue vigente actualmente?", "options": {"A": "LOMCE.", "B": "LODE.", "C": "LOE.", "D": "LOMLOE."}, "correct": "A"}, {"num": 270, "question": "Se trata de un elemento curricular exclusivo de la LOMLOE:", "options": {"A": "Situaciones de aprendizaje.", "B": "Estándares de aprendizaje.", "C": "Contenidos.", "D": "Objetivos generales."}, "correct": "A"}, {"num": 271, "question": "¿Cuál fue la primera ley educativa española que permaneció vigente durante más de 100 años?", "options": {"A": "Ley General de Educación.", "B": "LOGSE.", "C": "Ley Moyano.", "D": "LOE."}, "correct": "C"}, {"num": 272, "question": "La LODE (1985) se caracteriza por ser:", "options": {"A": "La primera ley educativa de la democracia.", "B": "La ley que estableció la ESO.", "C": "La primera ley consensuada tras la Constitución.", "D": "La ley que eliminó los centros concertados."}, "correct": "C"}, {"num": 273, "question": "Los saberes básicos de la LOMLOE sustituyen a:", "options": {"A": "Competencias específicas.", "B": "Criterios de evaluación.", "C": "Contenidos.", "D": "Objetivos."}, "correct": "C"}, {"num": 274, "question": "En la estructura de los Reales Decretos de la LOMLOE, las materias se desarrollan en:", "options": {"A": "Anexo I.", "B": "Anexo II.", "C": "Anexo III.", "D": "Anexo IV."}, "correct": "B"}, {"num": 275, "question": "¿Cuál es una novedad curricular propia de la LOMLOE?", "options": {"A": "Reválidas al final de etapa.", "B": "Competencias específicas vinculadas a materias.", "C": "Eliminación de la tutoría.", "D": "Supresión del Bachillerato."}, "correct": "B"}, {"num": 276, "question": "En la LOMLOE, la promoción en ESO requiere:", "options": {"A": "Superar todas las materias.", "B": "Aprobar obligatoriamente Lengua y Matemáticas.", "C": "Decisión colegiada basada en competencias y objetivos.", "D": "Superar una prueba externa."}, "correct": "C"}, {"num": 277, "question": "El Consejo Orientador en ESO se entrega:", "options": {"A": "En 1º y 3º ESO.", "B": "En 2º y 4º ESO.", "C": "Solo en 4º ESO.", "D": "En todos los cursos."}, "correct": "D"}, {"num": 278, "question": "La LOMLOE propone un modelo pedagógico basado en:", "options": {"A": "Memorización y repetición.", "B": "Modelo competencial.", "C": "Exámenes estatales estandarizados.", "D": "Enseñanza tradicional de contenidos."}, "correct": "B"}, {"num": 279, "question": "En los Reales Decretos de la LOMLOE, las orientaciones para diseñar las Situaciones de Aprendizaje se encuentran en:", "options": {"A": "Anexo I.", "B": "Anexo II.", "C": "Anexo III.", "D": "Anexo IV."}, "correct": "C"}, {"num": 280, "question": "Los objetivos generales de etapa en la LOMLOE se ubican en:", "options": {"A": "Anexo I.", "B": "El articulado del Real Decreto.", "C": "Anexo II.", "D": "Proyecto Educativo."}, "correct": "B"}, {"num": 281, "question": "La LOMLOE establece que el Perfil de Salida se compone de:", "options": {"A": "Competencias clave y descriptores operativos.", "B": "Saberes básicos y criterios de evaluación.", "C": "Objetivos e indicadores de logro.", "D": "Estándares de aprendizaje."}, "correct": "A"}, {"num": 282, "question": "¿Qué función NO corresponde al Consejo Escolar?", "options": {"A": "Aprobar el proyecto de presupuesto.", "B": "Conocer las candidaturas a la dirección.", "C": "Imponer medidas correctoras al alumnado.", "D": "Decidir sobre la admisión del alumnado."}, "correct": "C"}, {"num": 283, "question": "¿Quién designa a los miembros del Equipo Directivo en un centro público?", "options": {"A": "Director/a.", "B": "Claustro de Profesores.", "C": "Consejo Escolar.", "D": "Administración Educativa."}, "correct": "A"}, {"num": 284, "question": "¿Qué departamento es responsable del Plan de Acción Tutorial (PAT)?", "options": {"A": "Departamento de Orientación.", "B": "Departamento Didáctico.", "C": "Departamento TIC.", "D": "Comisión de Convivencia."}, "correct": "A"}, {"num": 285, "question": "¿Quién es el responsable último de la gestión económica de un centro educativo?", "options": {"A": "Director/a.", "B": "Jefe/a de Estudios.", "C": "Secretario/a.", "D": "Consejo Escolar."}, "correct": "A"}];
+
+let order = [];
+let current = 0;
+let okCount = 0;
+let badCount = 0;
+let answered = false;
+let wrongAnswers = [];
+
+const startScreen = document.getElementById('startScreen');
+const quizScreen = document.getElementById('quizScreen');
+const resultsScreen = document.getElementById('resultsScreen');
+
+const qPositionTitle = document.getElementById('qPositionTitle');
+const qNum = document.getElementById('qNum');
+const qText = document.getElementById('qText');
+const optionsWrap = document.getElementById('optionsWrap');
+const feedback = document.getElementById('feedback');
+const nextBtn = document.getElementById('nextBtn');
+const progressFill = document.getElementById('progressFill');
+const progressPct = document.getElementById('progressPct');
+const okCountEl = document.getElementById('okCount');
+const badCountEl = document.getElementById('badCount');
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz() {
+  order = shuffle(QUESTIONS.map((_, i) => i));
+  current = 0;
+  okCount = 0;
+  badCount = 0;
+  wrongAnswers = [];
+  startScreen.classList.add('hidden');
+  resultsScreen.classList.add('hidden');
+  quizScreen.classList.remove('hidden');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  answered = false;
+  const q = QUESTIONS[order[current]];
+  qPositionTitle.textContent = `Pregunta ${current + 1} de ${QUESTIONS.length}`;
+  qNum.textContent = `Pregunta nº ${q.num} del temario`;
+  qText.textContent = q.question;
+
+  optionsWrap.innerHTML = '';
+  const letters = Object.keys(q.options);
+  letters.forEach(letter => {
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.innerHTML = `<span class="opt-letter">${letter}</span><span class="opt-text"></span>`;
+    btn.querySelector('.opt-text').textContent = q.options[letter];
+    btn.addEventListener('click', () => selectAnswer(letter, btn));
+    optionsWrap.appendChild(btn);
+  });
+
+  feedback.className = 'feedback';
+  feedback.textContent = '';
+  nextBtn.disabled = true;
+  nextBtn.textContent = (current === QUESTIONS.length - 1) ? 'Ver resultados' : 'Siguiente pregunta';
+
+  const pct = Math.round((current / QUESTIONS.length) * 100);
+  progressFill.style.width = pct + '%';
+  progressPct.textContent = pct + '%';
+}
+
+function selectAnswer(letter, btnEl) {
+  if (answered) return;
+  answered = true;
+  const q = QUESTIONS[order[current]];
+  const isCorrect = letter === q.correct;
+
+  const allBtns = optionsWrap.querySelectorAll('.opt');
+  allBtns.forEach(b => b.disabled = true);
+
+  allBtns.forEach(b => {
+    const l = b.querySelector('.opt-letter').textContent;
+    if (l === q.correct) {
+      b.classList.add('correct');
+    } else if (l === letter && !isCorrect) {
+      b.classList.add('wrong');
+    } else {
+      b.classList.add('dim');
+    }
+  });
+
+  if (isCorrect) {
+    okCount++;
+    feedback.classList.add('show', 'ok');
+    feedback.textContent = '✓ Correcto · ' + q.correct + '. ' + q.options[q.correct];
+  } else {
+    badCount++;
+    wrongAnswers.push({
+      num: q.num,
+      question: q.question,
+      your: letter + '. ' + q.options[letter],
+      correct: q.correct + '. ' + q.options[q.correct]
+    });
+    feedback.classList.add('show', 'bad');
+    feedback.textContent = '✗ Incorrecto · La respuesta correcta era ' + q.correct + '. ' + q.options[q.correct];
+  }
+
+  okCountEl.textContent = okCount;
+  badCountEl.textContent = badCount;
+  nextBtn.disabled = false;
+}
+
+function nextQuestion() {
+  if (!answered) return;
+  current++;
+  if (current >= QUESTIONS.length) {
+    showResults();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showResults() {
+  quizScreen.classList.add('hidden');
+  resultsScreen.classList.remove('hidden');
+
+  const total = QUESTIONS.length;
+  const pct = Math.round((okCount / total) * 100);
+
+  document.getElementById('finalOk').textContent = okCount;
+  document.getElementById('finalBad').textContent = badCount;
+  document.getElementById('scorePct').textContent = pct + '%';
+
+  let title = 'Test completado';
+  if (pct >= 90) title = 'Excelente dominio';
+  else if (pct >= 70) title = 'Buen resultado';
+  else if (pct >= 50) title = 'Vas por buen camino';
+  else title = 'A seguir repasando';
+  document.getElementById('resultsTitle').textContent = title;
+
+  const circumference = 2 * Math.PI * 52;
+  const ring = document.getElementById('scoreRing');
+  ring.setAttribute('stroke-dasharray', circumference.toFixed(1));
+  const offset = circumference * (1 - okCount / total);
+  setTimeout(() => { ring.style.strokeDashoffset = offset.toFixed(1); }, 50);
+
+  if (wrongAnswers.length > 0) {
+    const reviewList = document.getElementById('reviewList');
+    reviewList.classList.remove('hidden');
+    const reviewItems = document.getElementById('reviewItems');
+    reviewItems.innerHTML = '';
+    wrongAnswers.forEach(w => {
+      const div = document.createElement('div');
+      div.className = 'review-item';
+      div.innerHTML = `<b>Nº${w.num}.</b> ${escapeHtml(w.question)}<br><span class="your-ans">Tu respuesta: ${escapeHtml(w.your)}</span><br><span class="correct-ans">Correcta: ${escapeHtml(w.correct)}</span>`;
+      reviewItems.appendChild(div);
+    });
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+document.getElementById('startBtn').addEventListener('click', startQuiz);
+document.getElementById('nextBtn').addEventListener('click', nextQuestion);
+document.getElementById('restartBtn').addEventListener('click', startQuiz);
+</script>
+
+</body>
+</html>
