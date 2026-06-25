@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Sociedad 2 · Clínica Peramato</title>
+<style>
+  :root {
+    --lima: #8dc63f;
+    --lima-dark: #6fa82e;
+    --lima-light: #e8f5d0;
+    --bg: #f7f9f4;
+    --white: #ffffff;
+    --text: #1a1a1a;
+    --muted: #6b7280;
+    --border: #e0e7d6;
+    --danger: #ef4444;
+    --danger-light: #fef2f2;
+    --success: #22c55e;
+    --success-light: #f0fdf4;
+    --radius: 14px;
+    --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+  .header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 8px rgba(141,198,63,0.08);
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .brand { font-size: 13px; font-weight: 700; color: var(--lima-dark); letter-spacing: 0.5px; }
+  .q-counter { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .progress-wrap { background: var(--border); border-radius: 99px; height: 6px; overflow: hidden; }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--lima), var(--lima-dark));
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+  .scoreboard {
+    display: flex;
+    gap: 10px;
+    padding: 10px 20px 0;
+    justify-content: center;
+  }
+  .score-pill {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 4px 12px;
+    font-size: 13px; font-weight: 600;
+  }
+  .score-pill .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-ok { background: var(--success); }
+  .dot-fail { background: var(--danger); }
+  .dot-pend { background: var(--muted); }
+  .main { padding: 20px 16px; max-width: 600px; margin: 0 auto; }
+  .question-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px 20px 20px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+  .q-number {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    color: var(--lima-dark); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .q-text {
+    font-size: 16px; font-weight: 600; line-height: 1.5;
+    color: var(--text); margin-bottom: 20px;
+  }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt-btn {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 14px;
+    cursor: pointer;
+    font-size: 14px; line-height: 1.45;
+    text-align: left;
+    transition: all 0.15s ease;
+    width: 100%;
+    color: var(--text);
+  }
+  .opt-btn:active { transform: scale(0.98); }
+  .opt-btn:hover:not(:disabled) { border-color: var(--lima); background: var(--lima-light); }
+  .opt-letter {
+    flex-shrink: 0;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: var(--muted);
+    transition: all 0.15s;
+  }
+  .opt-btn.correct { border-color: var(--success); background: var(--success-light); }
+  .opt-btn.correct .opt-letter { background: var(--success); border-color: var(--success); color: white; }
+  .opt-btn.wrong { border-color: var(--danger); background: var(--danger-light); }
+  .opt-btn.wrong .opt-letter { background: var(--danger); border-color: var(--danger); color: white; }
+  .opt-btn:disabled { cursor: default; opacity: 1; }
+  .feedback {
+    display: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 14px; font-weight: 600;
+    margin-bottom: 16px;
+    align-items: center; gap: 8px;
+  }
+  .feedback.show { display: flex; }
+  .feedback.ok { background: var(--success-light); color: #15803d; border: 1px solid #bbf7d0; }
+  .feedback.fail { background: var(--danger-light); color: #b91c1c; border: 1px solid #fecaca; }
+  .feedback-icon { font-size: 18px; }
+  .btn-next {
+    display: none;
+    width: 100%;
+    background: linear-gradient(135deg, var(--lima), var(--lima-dark));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 15px;
+    font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 12px rgba(141,198,63,0.35);
+    letter-spacing: 0.3px;
+  }
+  .btn-next.show { display: block; }
+  .btn-next:active { transform: scale(0.97); }
+  .screen-start {
+    text-align: center;
+    padding: 40px 20px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .screen-start .icon { font-size: 56px; margin-bottom: 16px; }
+  .screen-start h1 { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+  .screen-start p { color: var(--muted); font-size: 15px; margin-bottom: 30px; line-height: 1.6; }
+  .btn-start {
+    background: linear-gradient(135deg, var(--lima), var(--lima-dark));
+    color: white; border: none; border-radius: 14px;
+    padding: 16px 40px; font-size: 17px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 16px rgba(141,198,63,0.4);
+    transition: transform 0.15s;
+    width: 100%;
+  }
+  .btn-start:active { transform: scale(0.97); }
+  .meta-info {
+    display: flex; gap: 12px; justify-content: center;
+    flex-wrap: wrap; margin-bottom: 28px;
+  }
+  .meta-chip {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 99px; padding: 6px 14px;
+    font-size: 13px; font-weight: 600; color: var(--muted);
+  }
+  .meta-chip span { color: var(--lima-dark); }
+  .screen-result { display: none; padding: 30px 20px; max-width: 500px; margin: 0 auto; }
+  .result-header { text-align: center; margin-bottom: 28px; }
+  .result-emoji { font-size: 60px; margin-bottom: 10px; }
+  .result-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+  .result-sub { color: var(--muted); font-size: 15px; }
+  .result-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px; margin-bottom: 24px;
+  }
+  .result-box {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 10px; text-align: center;
+  }
+  .result-box .num { font-size: 28px; font-weight: 800; }
+  .result-box .lbl { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+  .num-ok { color: var(--success); }
+  .num-fail { color: var(--danger); }
+  .num-pct { color: var(--lima-dark); }
+  .result-bar-wrap { margin-bottom: 24px; }
+  .result-bar-label {
+    display: flex; justify-content: space-between;
+    font-size: 13px; color: var(--muted); margin-bottom: 6px;
+  }
+  .result-bar { background: var(--border); border-radius: 99px; height: 10px; overflow: hidden; }
+  .result-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--lima), var(--lima-dark));
+    border-radius: 99px;
+    transition: width 1s ease;
+  }
+  .btn-group { display: flex; flex-direction: column; gap: 10px; }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--lima), var(--lima-dark));
+    color: white; border: none; border-radius: 12px;
+    padding: 15px; font-size: 16px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 12px rgba(141,198,63,0.35);
+    transition: transform 0.15s;
+  }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-secondary {
+    background: var(--white); color: var(--text);
+    border: 2px solid var(--border); border-radius: 12px;
+    padding: 15px; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .btn-secondary:hover { border-color: var(--lima); }
+  .fail-list { margin-bottom: 24px; }
+  .fail-list-title {
+    font-size: 14px; font-weight: 700; color: var(--danger);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .fail-item {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+    font-size: 13px; line-height: 1.5;
+  }
+  .fail-item strong { color: var(--lima-dark); display: block; margin-bottom: 3px; font-size: 12px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="screenStart">
+  <div class="screen-start">
+    <div class="icon">📗</div>
+    <h1>Test Sociedad 2</h1>
+    <p>Banco de preguntas consolidadas — Test 2. Preguntas y opciones en orden aleatorio cada sesión.</p>
+    <div class="meta-info">
+      <div class="meta-chip">🎯 <span id="totalCount"></span> preguntas</div>
+      <div class="meta-chip">🔀 Orden aleatorio</div>
+      <div class="meta-chip">📊 Registro de fallos</div>
+    </div>
+    <button class="btn-start" onclick="startTest(false)">Empezar test completo</button>
+  </div>
+</div>
+
+<div id="screenTest" class="hidden">
+  <div class="header">
+    <div class="header-top">
+      <div class="brand">TEST SOCIEDAD 2</div>
+      <div class="q-counter" id="qCounter">Pregunta 1 de ?</div>
+    </div>
+    <div class="progress-wrap"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+  <div class="scoreboard">
+    <div class="score-pill"><div class="dot dot-ok"></div><span id="scoreOk">0</span> bien</div>
+    <div class="score-pill"><div class="dot dot-fail"></div><span id="scoreFail">0</span> mal</div>
+    <div class="score-pill"><div class="dot dot-pend"></div><span id="scorePend">0</span> rest.</div>
+  </div>
+  <div class="main">
+    <div class="question-card">
+      <div class="q-number" id="qNum">PREGUNTA 1 DE ?</div>
+      <div class="q-text" id="qText"></div>
+      <div class="options" id="optionsContainer"></div>
+    </div>
+    <div class="feedback" id="feedback">
+      <span class="feedback-icon" id="feedbackIcon"></span>
+      <span id="feedbackText"></span>
+    </div>
+    <button class="btn-next" id="btnNext" onclick="nextQuestion()">Siguiente →</button>
+  </div>
+</div>
+
+<div id="screenResult" class="screen-result hidden">
+  <div class="result-header">
+    <div class="result-emoji" id="resultEmoji">🎉</div>
+    <div class="result-title" id="resultTitle">¡Test completado!</div>
+    <div class="result-sub" id="resultSub"></div>
+  </div>
+  <div class="result-grid">
+    <div class="result-box"><div class="num num-ok" id="rOk">0</div><div class="lbl">Correctas</div></div>
+    <div class="result-box"><div class="num num-fail" id="rFail">0</div><div class="lbl">Falladas</div></div>
+    <div class="result-box"><div class="num num-pct" id="rPct">0%</div><div class="lbl">Nota</div></div>
+  </div>
+  <div class="result-bar-wrap">
+    <div class="result-bar-label"><span>Aciertos</span><span id="rBarLabel">0%</span></div>
+    <div class="result-bar"><div class="result-bar-fill" id="rBarFill" style="width:0%"></div></div>
+  </div>
+  <div class="fail-list" id="failList"></div>
+  <div class="btn-group">
+    <button class="btn-primary" id="btnRepeatFails" onclick="startTest(true)" style="display:none">🔁 Repetir solo falladas</button>
+    <button class="btn-primary" onclick="startTest(false)">🔄 Test nuevo completo</button>
+    <button class="btn-secondary" onclick="showStart()">← Volver al inicio</button>
+  </div>
+</div>
+
+<script>
+const ALL_QUESTIONS = [
+  {q:"¿Cuál es una ventaja destacada del aprendizaje online?",opts:["Acceso desde cualquier lugar del mundo","Menor esfuerzo por parte del estudiante","Mayor rigidez horaria","Obligatoriedad de presencia física"],ans:0},
+  {q:"La educación on-line:",opts:["Amplía las oportunidades educativas para personas en áreas remotas o con limitaciones de movilidad.","Disminuye las oportunidades educativas para personas en áreas remotas o con limitaciones de movilidad.","Ayuda al estudiante al aprendizaje de las nuevas tecnologías.","Ayuda al estudiante a utilizar el metalenguaje."],ans:0},
+  {q:"En la escuela participativa:",opts:["Los padres son considerados como un recurso útil para desarrollar el proceso educativo, al mismo nivel que el profesorado.","Los padres son considerados como un recurso útil para desarrollar el proceso educativo, al mismo nivel que los alumnos.","Los padres son considerados como un recurso útil para desarrollar el proceso educativo, al mismo nivel que las instituciones.","Los padres son considerados como un recurso útil para desarrollar el proceso educativo, al mismo nivel que el departamento de orientación."],ans:0},
+  {q:"La escuela autonomista:",opts:["Otorga al alumnado un papel activo en el proceso de aprendizaje con una escasa participación de los padres y de la comunidad.","Otorga al alumnado un papel pasivo en el proceso de aprendizaje y gran participación de los padres y de la comunidad.","Los padres no reciben las notas de los alumnos ni dan permiso para actividades extraescolares.","Los alumnos organizan ellos mismos las actividades extraescolares y los tiempos de ocio."],ans:0},
+  {q:"¿Qué corriente sostiene que los valores dependen de la percepción del sujeto?",opts:["Subjetivismo axiológico","Objetivismo axiológico","Realismo axiológico","Empirismo social"],ans:0},
+  {q:"La personalización del aprendizaje de la educación on line:",opts:["Puede mejorar la eficacia del aprendizaje al centrarse en las fortalezas y áreas de mejora de cada estudiante.","Puede mejorar difícilmente la eficacia del aprendizaje al centrarse en las fortalezas y áreas de mejora de cada estudiante.","Permite que parte de los contenidos puedan ser dados y evaluados para algún estudiante.","Permite que parte de los contenidos puedan ser considerados redundantes para algún estudiante."],ans:0},
+  {q:"¿Qué desafíos plantea la IA respecto a la evaluación del aprendizaje?",opts:["Evitar el plagio y garantizar la autoría","Reducir el esfuerzo de los estudiantes","Eliminar la necesidad de seguimiento","Hacer innecesario el acompañamiento pedagógico"],ans:0},
+  {q:"¿Qué acontecimiento aceleró la implantación de la educación online en todo el mundo?",opts:["La pandemia de COVID-19","La creación de Google Classroom","El cambio de currículum europeo","La caída de la natalidad escolar"],ans:0},
+  {q:"La escuela jerárquica:",opts:["Ofrece posibilidades mínimas de participación, es meramente consultiva y para tomar decisiones menores.","Ofrece posibilidades máximas de participación, es consultiva y ejecutiva y para tomar decisiones centrales.","Los padres y los profesores participan con igual porcentaje en las decisiones del consejo escolar.","La administración consulta a los padres las decisiones importantes."],ans:0},
+  {q:"La Ley Moyano (1857):",opts:["Estableció por primera vez la gratuidad y obligatoriedad de la enseñanza primaria.","Estableció por primera vez la gratuidad y obligatoriedad de la enseñanza secundaria.","Estableció por primera vez la gratuidad y obligatoriedad de la enseñanza primaria y secundaria.","Estableció por primera vez la gratuidad de la enseñanza postobligatoria."],ans:0},
+  {q:"La educación on line ofrece:",opts:["Flexibilidad en términos de horarios, permitiendo además que los estudiantes adapten sus estudios a sus compromisos familiares y otros.","Flexibilidad muy limitada en términos de horarios, permitiendo difícilmente que los estudiantes adapten sus estudios a sus compromisos familiares y otros.","La necesidad de tener muchos conocimientos de las nuevas tecnologías de la información.","La necesidad de tener apenas conocimientos de las nuevas tecnologías de la información."],ans:0},
+  {q:"En la Pedagogía tradicional la interacción entre la familia y la escuela:",opts:["Se reduce la cooperación en las tareas escolares.","Exige una participación de la familia integral.","Exige la participación en las actividades extraescolares de la familia.","No existe ningún tipo de interacción."],ans:0},
+  {q:"¿Cuál es uno de los retos principales de la escuela común?",opts:["Incorporar la diversidad cultural sin generar exclusión","Reforzar la cultura dominante","Eliminar las diferencias culturales","Unificar tradiciones familiares"],ans:0},
+  {q:"En pedagogías no directivas la interacción de la familia y la escuela:",opts:["Se redefinen las relaciones y roles en el proceso educativo, para una 'desjerarquización'.","Los roles están definidos a priori para establecer desde un principio la jerarquía.","La dirección es elegida entre alumnos y padres.","La dirección es elegida entre padres y profesores."],ans:0},
+  {q:"En la escuela comunitaria:",opts:["Hay participación de los padres y de las instituciones, pero se considera en menor medida la participación del alumno.","Hay participación de los padres y de los alumnos, pero se considera en menor medida la participación de las instituciones.","Hay participación de los padres y de las instituciones, pero se considera en menor medida la participación del docente.","Hay participación de los padres y de los docentes, pero se considera en menor medida la participación del alumno."],ans:0},
+  {q:"Muchas plataformas en línea fomentan el aprendizaje colaborativo a través de herramientas:",opts:["Como MOOC, foros de discusión, videoconferencias, y proyectos grupales.","Como videos, simulaciones interactivas o evaluaciones on line.","Como videos, foros de discusión y evaluaciones on line.","Como simulaciones interactivas, evaluaciones interactivas y videos."],ans:0},
+  {q:"Los programas on line suelen ofrecer:",opts:["Certificaciones que son reconocidas por empleadores y por instituciones académicas tradicionales.","Certificaciones que difícilmente son reconocidas por empleadores y por instituciones académicas tradicionales.","Certificaciones oficiales en el ámbito nacional pero no en el internacional.","Certificaciones oficiales en el ámbito autonómico pero no en el nacional."],ans:0},
+  {q:"Gracias a la personalización de la educación:",opts:["Los estudiantes pueden avanzar a su propio ritmo, permitiéndoles dedicar más tiempo a conceptos difíciles y avanzar rápidamente a través de material que ya dominan.","Los estudiantes pueden avanzar difícilmente a su propio ritmo, permitiéndoles dedicar menos tiempo a conceptos difíciles y avanzar a través de material que ya dominan.","La labor del docente se hace más compleja puesto que debe concretar los contenidos y actividades para cada estudiante.","La labor del docente se hace más compleja puesto que debe concretar la evaluación para cada estudiante."],ans:0},
+  {q:"Una de las principales ventajas del aprendizaje on line:",opts:["Es la capacidad de acceder a la educación desde cualquier lugar del mundo.","Es la capacidad muy limitada de acceder a la educación desde cualquier lugar del mundo.","Es la de compatibilizarla con el aprendizaje presencial.","Es la de compatibilizarla con el mundo laboral."],ans:0},
+  {q:"¿Qué buscan desarrollar las habilidades del siglo XXI en educación?",opts:["Pensamiento crítico, creatividad, colaboración y comunicación","Memorización, repetición, obediencia y silencio","Rechazo a la tecnología","Trabajo solitario y silencioso"],ans:0},
+  {q:"La educación on line permite:",opts:["La adaptación de los materiales de estudio y las evaluaciones según las necesidades individuales de los estudiantes.","Difícilmente la adaptación de los materiales de estudio y las evaluaciones según las necesidades individuales de los estudiantes.","La adaptación de las clases ante posibles eventualidades.","La adaptación de créditos ante posibles eventualidades a largo plazo."],ans:0},
+  {q:"La pandemia COVID-19:",opts:["Evidenció la importancia de la tecnología en la continuidad de la educación.","Evidenció la poca importancia de la tecnología en la continuidad de la educación.","Evidenció la dificultad del sistema educativo de abastecimiento editorial.","Evidenció la facilidad del sistema educativo de abastecimiento editorial."],ans:0},
+  {q:"La primera protagonista en la gestación social del ciudadano es:",opts:["La familia.","La escuela.","El estado.","La sociedad civil."],ans:0},
+  {q:"El profesorado debe trabajar hacia el establecimiento de:",opts:["Criterios educativos comunes sin dar lecciones ni infravalorar a las familias; ofrecer modelos de relación e intervención con el alumnado que enriquezcan la experiencia educativa.","Criterios educativos comunes dando una lección de pedagogía a las familias; ofrecer modelos de relación e intervención con el alumnado que enriquezcan la experiencia educativa.","Criterios educativos comunes sin dar lecciones ni infravalorar a las familias; ofrecer modelos negativos de relación e intervención con el alumnado que frustre la experiencia educativa.","Criterios educativos comunes sin dar lecciones ni infravalorar a las familias; ofrecer modelos de relación e intervención con el alumnado que aligeren la dinámica del input y el output."],ans:0},
+  {q:"El objetivismo axiológico:",opts:["Reconoce en los valores un 'ser-en-sí', desligado de la experiencia individual subjetiva.","Reconoce en los valores un 'ser-conmigo', ligado de la experiencia individual subjetiva.","Reconoce en los valores un 'ser-en-sí', desligado de la experiencia individual objetiva.","Reconoce en los valores un 'ser-natural', desligado de la experiencia cultural."],ans:0},
+  {q:"A partir de los años setenta:",opts:["La sociedad occidental entró en crisis y con ella sus valores que hasta ahora había creído válidos y universales.","Los valores occidentales entraron en un apogeo hasta ahora inédito.","La sociedad de consumo entró en un fenómeno de autocomplacencia y expansión universal.","El capitalismo occidental fue adoptado por una sociedad global satisfecha de sí misma con aspiraciones de paz."],ans:0},
+  {q:"La información recopilada durante la evaluación continua:",opts:["Se utiliza para adaptar y ajustar el enfoque pedagógico, permitiendo a los educadores abordar las necesidades específicas de los estudiantes.","Se utiliza para adaptar y ajustar la evaluación final, permitiendo a los educadores ajustarla a sus necesidades.","Se utiliza para adaptar y ajustar las actividades, permitiendo a los educadores ajustarlas a las capacidades específicas de los estudiantes.","Se utiliza para adaptar y ajustar los contenidos, permitiendo a los educadores ajustarlos a las necesidades específicas de los estudiantes."],ans:0},
+  {q:"¿Qué debe hacer la escuela frente a los distintos modelos familiares?",opts:["Reconocer y valorar su diversidad","Imponer un modelo tradicional","Evaluarlos según su estructura","Ignorar sus características"],ans:0},
+  {q:"La pedagogía de la desescolarización:",opts:["Trata de suprimir las instituciones y estructuras, defendiendo una participación sin presiones, junto con la abolición de la escolaridad obligatoria y de los diplomas.","Trata de suprimir la inspección y la dirección de los centros y defender una participación sin presiones junto con abolición de la escolaridad postobligatoria y de los diplomas.","Es la escuela defendida por el Partido Anarquista Americano.","Es la educación tal como la proyectó León Trotsky."],ans:0},
+  {q:"La inclusividad y diversidad en el ámbito educativo:",opts:["Se centran en la creación de entornos de aprendizaje que respetan, valoran y celebran las diferencias individuales, incluyendo aspectos como la raza, el género, la orientación sexual, la religión, la discapacidad y la diversidad cultural.","Se centran en la creación de entornos de aprendizaje que contraponen, comparan y oponen las diferencias individuales.","Se centran en la creación de entornos de aprendizaje que comparan, enfrentan y contrastan las diferencias individuales.","Se centran en la creación de entornos de aprendizaje que cotejan, comprueban y compulsan las diferencias individuales."],ans:0},
+  {q:"El subjetivismo axiológico:",opts:["Sostiene que los valores cobran significado según cómo sean percibidos e interpretados por el sujeto que los reconoce.","Sostiene que los valores cobran significado según cómo sean percibidos e interpretados por una tercera persona que los reconoce.","Sostiene que los valores cobran significado según cómo sean comunicados por el sujeto que los reconoce.","Sostiene que los valores cobran significado según cómo sean malinterpretados por el sujeto que los reconoce."],ans:0},
+  {q:"La colaboración entre familia y escuela tiene efectos particularmente positivos:",opts:["En las familias con hijos que presentan problemas escolares.","En las familias con hijos que presentan problemas en fiscalía de menores.","En las familias con hijos que presentan problemas psíquicos graves.","En las familias con hijos que presentan cuadros de despersonalización."],ans:0},
+  {q:"La implicación de las familias será posible en la medida en que:",opts:["Se pongan en marcha y sean efectivos los canales de comunicación, y se las invita a participar de algún modo concreto.","Se pongan en marcha y sean efectivos los canales de comunicación, y no se las invite a participar de algún modo concreto.","Se pongan en marcha y sean efectivos los canales de comunicación, y se las invita a participar de algún modo general.","Se pongan en marcha y sean efectivos los canales de comunicación aunque no se conozca su efectividad, y se las invita a participar de algún modo general."],ans:0},
+  {q:"La socialización busca internalizar valores que conduzcan al individuo:",opts:["A promover los intereses de la sociedad receptora, intentando compatibilizar sus intereses personales y sociales, a la vez que delimita su modo de ser y estar en el mundo.","A criticar los intereses de la sociedad receptora, intentando imponer sus intereses personales y sociales, a la vez que delimita su modo de ser y estar en el mundo.","A poner a la propia sociedad en crisis para su progreso.","A poner a la propia sociedad en crisis para ser absorbida por otra."],ans:0},
+  {q:"Desde principios del siglo XXI el desarrollo de los medios tecnológicos de la información y el intercambio de datos han revolucionado con una proyección:",opts:["Mucho mayor que la imprenta.","Mucho mejor que la imprenta.","Al igual que la imprenta.","Mucho menor que la bomba de hidrógeno."],ans:0},
+  {q:"La educación on line (ampliación de oportunidades):",opts:["Amplía las oportunidades educativas para personas en áreas remotas o con limitaciones de movilidad.","Disminuye las oportunidades educativas para personas en áreas remotas o con limitaciones de movilidad.","Solamente ayuda al estudiante al aprendizaje de las nuevas tecnologías.","Ayuda al estudiante a utilizar el metalenguaje."],ans:0},
+  {q:"La educación personalizada les brinda a los estudiantes:",opts:["La oportunidad de elegir actividades o proyectos que se alineen con sus intereses y metas personales, lo que fomenta la motivación intrínseca.","La oportunidad de elegir actividades o proyectos que raramente se alineen con sus intereses y metas personales, lo que no fomenta la motivación intrínseca.","La oportunidad de elegir actividades o proyectos que se alineen con intereses y metas comunitarias.","La oportunidad de elegir actividades o proyectos que se alineen con intereses y metas educativas, aunque no fomenten la motivación intrínseca."],ans:0},
+  {q:"A partir de los años setenta, gracias al reconocimiento y defensa de la diversidad, los valores son explicados a partir de dos dimensiones:",opts:["Una subjetiva (valores individuales para nuestro desarrollo personal) y otra objetiva (valores sociales para convivir en armonía), que conducen a un determinado comportamiento.","Una subjetiva (valores supraindividuales para nuestro desarrollo personal) y otra objetiva (valores sociales para convivir en momentos de dificultad extrema), que conducen a un determinado comportamiento.","Una subconsciente (encargada de satisfacer nuestros instintos de sobrevivencia) y otra supraconsciente (encargada de satisfacer nuestros instintos en la jerarquía social).","Una supraconsciente (encargada de satisfacer nuestros instintos de sobrevivencia) y otra subconsciente (encargada de satisfacer nuestros instintos en la jerarquía social)."],ans:0},
+  {q:"El rendimiento de la IA:",opts:["Libera a los docentes de una labor compleja e individualizada para que puedan dedicar tiempo de calidad personal hacia sus alumnos.","Libera difícilmente a los docentes de una labor compleja e individualizada para que puedan dedicar tiempo de calidad personal hacia sus alumnos.","Libera a los docentes de una labor compleja e individualizada para que puedan dedicar tiempo a la formación personal.","Libera a los docentes de una labor compleja e individualizada para que puedan dedicar tiempo a la disciplina en el aula."],ans:0},
+  {q:"La diversificación de contenidos conceptuales y de actividades en la personalización:",opts:["Se amplía hasta el punto de ser inabarcables con nuestra capacidad, pero manejables a través de algoritmos.","Se amplía hasta el punto de ser inabarcables con nuestra capacidad, de manera que la vastedad de la información acaba impidiendo la elegibilidad de los contenidos.","Se amplía hasta el punto de ser inabarcables con nuestra capacidad, de manera que la vastedad de la información acaba impidiendo la posibilidad de la evaluación.","Se amplía hasta el punto de ser inabarcables con nuestra capacidad, de manera que la vastedad de la información acaba impidiendo la elegibilidad de las actividades."],ans:0},
+  {q:"¿Qué es el aprendizaje híbrido?",opts:["Es la educación en la que se ponen en combinación enfoques presenciales y on line.","Es la educación en la que el estudiante puede elegir entre el enfoque presencial y on line.","Es la educación on line en la que ocasionalmente hay alguna actividad presencial.","Es la educación on line en la que las actividades cooperativas son presenciales."],ans:0},
+  {q:"Las plataformas educativas on line:",opts:["Utilizan algoritmos y análisis de datos para adaptar los materiales y las actividades según el rendimiento y las necesidades individuales.","Utilizan rara vez algoritmos y análisis de datos para adaptar los materiales y las actividades.","Utilizan algoritmos y análisis de datos para adaptar los métodos de evaluación continua según el rendimiento y las necesidades individuales.","Utilizan rara vez algoritmos y análisis de datos para adaptar los métodos de evaluación continua."],ans:0},
+  {q:"¿Qué desafíos debe abordar en los próximos años la educación on line?",opts:["Garantizar la calidad de la educación, la equidad de acceso y el compromiso estudiantil.","Garantizar la calidad de la educación, la equidad de acceso y el absentismo.","Garantizar la calidad de la educación, la equidad de acceso y las plataformas editoriales ilegales.","Garantizar la calidad de la educación, las plataformas editoriales ilegales y el compromiso estudiantil."],ans:0},
+  {q:"En los años 50 el valor público del lenguaje:",opts:["Ayudó en gran medida a tener en cuenta el aspecto social de los valores individuales.","Ayudó en gran medida a rechazar el aspecto social de los valores individuales.","Ayudó a utilizar la semántica para estudiar los valores.","Llevó a dejar de utilizar la semántica para estudiar los valores."],ans:0},
+  {q:"El acceso global a la enseñanza on line ha facilitado:",opts:["A un sector de la población que por circunstancias no pudo estudiar en su tiempo y ahora pueden mejorar su preparación para acceder a puestos de trabajo más cualificados.","A un sector de la población que, por incompetentes en el ámbito presencial, pueden mejorar su preparación para acceder a puestos de trabajo más cualificados.","A un sector de la población que por circunstancias han tenido hijos demasiado pronto.","A un sector de la población que por circunstancias tuvo que hacerse cargo del núcleo familiar en su juventud."],ans:0},
+  {q:"La colaboración familia-escuela requiere:",opts:["Que el profesorado acepte que sus conocimientos en educación no son superiores al saber que pueden aportar las familias.","Que el profesorado acepte que sus conocimientos en educación son superiores al saber que pueden aportar las familias.","Que el profesorado acepte que sus conocimientos en educación son inferiores al saber que pueden aportar las familias.","Que el profesorado acepte que sus conocimientos en educación son iguales al saber que pueden aportar las familias."],ans:0},
+  {q:"¿Qué ley fue la primera en España que configuró un espacio educativo neutral impulsado por el Estado?",opts:["LOGSE","Ley Moyano","LOE","LOMLOE"],ans:1},
+  {q:"¿Qué derecho reconoce el artículo 26 de la Declaración Universal de los Derechos Humanos?",opts:["El derecho al trabajo","El derecho a la Sanidad","El derecho a la educación","El derecho a la propiedad privada"],ans:2},
+  {q:"La diversidad cultural de las familias debe entenderse como:",opts:["Un obstáculo para el aprendizaje","Una dificultad para la convivencia escolar","Una posibilidad de enriquecimiento educativo","Una amenaza para la igualdad"],ans:2},
+  {q:"¿Qué función comparten familia y escuela respecto al menor?",opts:["La gestión económica del hogar","La formación integral y socialización","La organización política","La evaluación universitaria"],ans:1},
+  {q:"¿Qué beneficio produce la cooperación entre familia y escuela en el alumnado?",opts:["Menor autoestima","Mayor absentismo escolar","Mejor progreso académico","Menor motivación hacia el aprendizaje"],ans:2},
+  {q:"En la visión de la familia, las actividades de aprendizaje suelen estar:",opts:["Alejadas de los intereses del niño","Vinculadas a objetivos legales","Basadas exclusivamente en la memorización","Insertas en la vida cotidiana"],ans:3},
+  {q:"¿Qué característica define a la escuela participativa?",opts:["El alumnado dirige completamente el aprendizaje","Los padres son considerados un recurso útil para el proceso educativo","Se eliminan las instituciones escolares","La participación familiar es únicamente consultiva"],ans:1},
+  {q:"¿Qué ventaja principal ofrece el aprendizaje on line?",opts:["Sustituir totalmente la educación presencial","Eliminar la interacción entre estudiantes","Acceder a la educación desde cualquier lugar","Reducir el uso de tecnologías educativas"],ans:2},
+  {q:"¿Qué habilidad del siglo XXI se relaciona con analizar información de manera reflexiva y cuestionarla constructivamente?",opts:["Literacidad digital","Pensamiento crítico","Aprendizaje autónomo","Aprendizaje emocional"],ans:1},
+  {q:"¿Qué persigue la evaluación continua?",opts:["Basarse solo en exámenes finales","Ofrecer una visión completa del progreso del estudiante","Eliminar el feedback educativo","Sustituir la evaluación formativa"],ans:1},
+  {q:"En la educación on line los estudiantes desarrollan las competencias digitales que en la actualidad son tan importantes como:",opts:["Las habilidades sociales.","Las habilidades cognitivas.","Las habilidades afectivo-valorativas.","Las habilidades emocionales."],ans:0},
+  {q:"Los valores más asentados, las creencias más enraizadas sobre las que se construirán el resto:",opts:["Se forjan en el ámbito familiar desde la conexión neonata maternal.","Se forjan en el ámbito escolar desde el primer curso de infantil.","Se forjan en el ámbito escolar, en la educación entre iguales.","Se forjan en el ámbito escolar en el ámbito de la educación para iguales."],ans:0},
+  {q:"El apoyo parental es:",opts:["La conducta exhibida o manifestada por el padre o la madre hacia su hijo, que hace que el menor se sienta cómodo en su presencia, confirmándole que es aceptado y aprobado como persona.","La conducta exhibida o manifestada por el padre o la madre hacia su hijo, que hace que el menor se sienta cómodo pero atento en su presencia, confirmándole que es aceptado si se mantiene en alerta.","La conducta exhibida o manifestada por el padre o la madre hacia su hijo, que hace que el menor se sienta en perpetua vigilancia en su presencia, confirmándole que será castigado.","La ayuda necesaria que los padres deben recibir a cuenta de deducciones por parte del Ministerio de Hacienda."],ans:0},
+  {q:"Se hace necesario crear y potenciar espacios de encuentro y participación activa entre la familia y la escuela como:",opts:["Entrevistas personales, reuniones generales con el equipo docente, tutorías, cuaderno de comunicación con la familia, boletines e informes, notas informativas y circulares, escuela de familias o encuentros de formación, fiestas, celebraciones o jornadas de puertas abiertas.","Entrevistas comunitarias, reuniones particulares con el equipo docente, tutorías colectivas, cuaderno de comunicación con la familia, boletines e informes, notas informativas y circulares, escuela de familias o encuentros de formación.","Todas las que permitan los medios tecnológicos de la información y la comunicación.","Cualquiera siempre que no sea en horario lectivo."],ans:0},
+  {q:"Organizar espacios y actividades de manera igualitaria en coeducación:",opts:["Organizar espacios y actividades de manera igualitaria: ofrecer una amplia gama de actividades y materiales para todos los alumnos, sin condicionar los espacios y colores.","Organizar espacios y actividades de manera diferenciada: ofrecer una amplia gama de actividades y materiales para que los alumnos puedan expresar las diferencias con espacios y colores.","Organizar espacios y actividades de manera igualitaria: ofrecer una actividad única y monotemática para todos los alumnos, sin utilizar espacios y colores diversos sino exclusivos.","Organizar espacios y actividades de manera diversa: ofrecer una amplia gama de actividades y materiales para todos los alumnos, condicionando los espacios y colores en razón de sexos."],ans:0},
+  {q:"Entre las características individuales del alumno que pueden derivar en fracaso escolar podemos distinguir 3:",opts:["El nivel motivacional del alumno, su esfuerzo y la percepción que tiene del apoyo y la ayuda de sus padres.","El nivel motivacional del alumno, su esfuerzo y la percepción que tiene del apoyo y las becas de ayuda al estudio.","El nivel de hiperactividad del alumno, su esfuerzo y la percepción que tiene del apoyo y la ayuda de sus padres.","El nivel motivacional del alumno, su falta de rendimiento en las clases de refuerzo y la percepción que tiene del apoyo y la ayuda de sus padres."],ans:0},
+  {q:"¿Qué tipos de escuela pública hay básicamente en Europa respecto a titularidad?",opts:["La continental o cuya titularidad es estatal y la anglosajona cuya titularidad es local.","La estatal cuya titularidad depende de la Comisión Europea y la local cuya titularidad depende del Estado Nacional.","La estatal cuya titularidad depende de los Órganos electorales nacionales y la local cuya titularidad depende de las diputaciones.","La estatal que depende del Estado y la local que depende de las autonomías."],ans:0},
+  {q:"¿Qué es coeducar?",opts:["Coeducar es el método de intervención educativo que va más allá de la educación mixta y cuyas bases se asientan en el reconocimiento de las potencialidades e individualidades de niñas y niños, independientemente de su sexo.","Coeducar es el método de intervención educativo que se asimila a la educación mixta, es decir, sus bases se asientan en la educación de niñas y niños conjuntamente.","Coeducar es el método de intervención educativo que va más allá de la educación mixta y cuyas bases se asientan en el reconocimiento de la igualdad entre niñas y niños, como si el sexo no existiera.","Coeducar es el método de intervención educativo que retrocede de la educación mixta y cuyas bases se asientan en la antigua segregación entre niñas y niños."],ans:0},
+  {q:"En la Escuela Nueva hay métodos activos de participación y un feedback constante entre profesores y alumnos pero:",opts:["Aunque hay contactos regulares entre familia y escuela, no integran a los padres en la participación.","Aunque no hay contactos regulares entre familia y escuela, se integran a los padres en la participación.","Se buscan soluciones unilaterales a los problemas por parte de los docentes.","Se buscan soluciones unilaterales a los problemas por parte de los alumnos."],ans:0},
+  {q:"¿Qué es la mutualidad moral?",opts:["Es el concepto según el cual familia y escuela deben colaborar para que sus actuaciones en todas las funciones que tienen encomendadas sean complementarias.","Es el concepto según el cual familia y escuela deben competir para que sus actuaciones en todas las funciones que tienen encomendadas sean mejores unas de otras.","Es la mutua que acoge a padres y profesores para su salud psíquica.","Es el ámbito de intervención tanto de padres y profesores para compatibilizar escuela y familia."],ans:0},
+  {q:"La diversidad cultural de las familias:",opts:["No es un obstáculo para la participación en la escuela, sino más bien la posibilidad de un enriquecimiento.","Es un obstáculo para la participación en la escuela, sino además la imposibilidad de un enriquecimiento.","Ha de homogeneizarse a través de los servicios sociales.","Ha de neutralizarse a través de los medios sociales."],ans:0}
+];
+
+document.getElementById('totalCount').textContent = ALL_QUESTIONS.length;
+
+let questions = [];
+let current = 0;
+let correct = 0;
+let wrong = 0;
+let failedIndices = [];
+let answered = false;
+let isRetryMode = false;
+
+const LETTERS = ['A','B','C','D'];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startTest(retryFails) {
+  isRetryMode = retryFails;
+  if (retryFails && failedIndices.length > 0) {
+    questions = shuffle(failedIndices.map(i => ALL_QUESTIONS[i]));
+  } else {
+    questions = shuffle([...ALL_QUESTIONS]);
+    failedIndices = [];
+  }
+  current = 0; correct = 0; wrong = 0;
+  document.getElementById('screenStart').classList.add('hidden');
+  document.getElementById('screenResult').classList.add('hidden');
+  document.getElementById('screenTest').classList.remove('hidden');
+  document.getElementById('scorePend').textContent = questions.length;
+  document.getElementById('scoreOk').textContent = '0';
+  document.getElementById('scoreFail').textContent = '0';
+  renderQuestion();
+}
+
+function renderQuestion() {
+  answered = false;
+  const total = questions.length;
+  const q = questions[current];
+  const num = current + 1;
+
+  document.getElementById('qCounter').textContent = `Pregunta ${num} de ${total}`;
+  document.getElementById('qNum').textContent = `PREGUNTA ${num} DE ${total}`;
+  document.getElementById('progressFill').style.width = `${(current / total) * 100}%`;
+  document.getElementById('qText').textContent = q.q;
+
+  const shuffled = shuffle([0,1,2,3]);
+  const correctOriginalIdx = q.ans;
+
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+
+  shuffled.forEach((origIdx, pos) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.dataset.origIdx = origIdx;
+    btn.innerHTML = `<span class="opt-letter">${LETTERS[pos]}</span><span>${q.opts[origIdx]}</span>`;
+    btn.onclick = () => selectOption(btn, origIdx, correctOriginalIdx, q);
+    container.appendChild(btn);
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  document.getElementById('btnNext').className = 'btn-next';
+}
+
+function selectOption(btn, selectedOrigIdx, correctOrigIdx, q) {
+  if (answered) return;
+  answered = true;
+
+  document.querySelectorAll('.opt-btn').forEach(b => {
+    b.disabled = true;
+    const origIdx = parseInt(b.dataset.origIdx);
+    if (origIdx === correctOrigIdx) {
+      b.classList.add('correct');
+    } else if (b === btn && selectedOrigIdx !== correctOrigIdx) {
+      b.classList.add('wrong');
+    }
+  });
+
+  const fb = document.getElementById('feedback');
+  const icon = document.getElementById('feedbackIcon');
+  const text = document.getElementById('feedbackText');
+
+  if (selectedOrigIdx === correctOrigIdx) {
+    correct++;
+    fb.className = 'feedback ok show';
+    icon.textContent = '✅';
+    text.textContent = '¡Correcto!';
+    document.getElementById('scoreOk').textContent = correct;
+  } else {
+    wrong++;
+    const qIdx = ALL_QUESTIONS.indexOf(q);
+    if (qIdx >= 0 && !isRetryMode) failedIndices.push(qIdx);
+    fb.className = 'feedback fail show';
+    icon.textContent = '❌';
+    text.textContent = `Incorrecto. La respuesta correcta es: "${q.opts[correctOrigIdx]}"`;
+    document.getElementById('scoreFail').textContent = wrong;
+  }
+
+  document.getElementById('scorePend').textContent = questions.length - current - 1;
+  document.getElementById('btnNext').className = 'btn-next show';
+  document.getElementById('btnNext').textContent = current < questions.length - 1 ? 'Siguiente →' : 'Ver resultados →';
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= questions.length) showResults();
+  else renderQuestion();
+}
+
+function showResults() {
+  document.getElementById('screenTest').classList.add('hidden');
+  const screen = document.getElementById('screenResult');
+  screen.classList.remove('hidden');
+
+  const total = questions.length;
+  const pct = Math.round((correct / total) * 100);
+
+  document.getElementById('rOk').textContent = correct;
+  document.getElementById('rFail').textContent = wrong;
+  document.getElementById('rPct').textContent = pct + '%';
+  document.getElementById('rBarLabel').textContent = pct + '%';
+
+  let emoji = '🎉', title = '¡Excelente!';
+  if (pct < 50) { emoji = '😅'; title = 'Necesitas repasar'; }
+  else if (pct < 70) { emoji = '📖'; title = '¡Vas bien!'; }
+  else if (pct < 90) { emoji = '💪'; title = '¡Muy bien!'; }
+
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultSub').textContent = `${correct} de ${total} correctas · ${pct}%`;
+
+  setTimeout(() => { document.getElementById('rBarFill').style.width = pct + '%'; }, 100);
+
+  const failList = document.getElementById('failList');
+  failList.innerHTML = '';
+  if (wrong > 0) {
+    failList.innerHTML = `<div class="fail-list-title">❌ Preguntas falladas (${wrong})</div>`;
+    const toShow = isRetryMode ? questions : failedIndices.map(i => ALL_QUESTIONS[i]);
+    toShow.slice(0, 20).forEach((q, i) => {
+      const div = document.createElement('div');
+      div.className = 'fail-item';
+      div.innerHTML = `<strong>Nº ${i+1}</strong>${q.q}`;
+      failList.appendChild(div);
+    });
+    if (toShow.length > 20) {
+      const more = document.createElement('div');
+      more.className = 'fail-item';
+      more.style.color = 'var(--muted)';
+      more.textContent = `... y ${toShow.length - 20} más`;
+      failList.appendChild(more);
+    }
+  }
+
+  const btnRepeat = document.getElementById('btnRepeatFails');
+  if (wrong > 0 && !isRetryMode && failedIndices.length > 0) {
+    btnRepeat.style.display = 'block';
+    btnRepeat.textContent = `🔁 Repetir solo falladas (${failedIndices.length})`;
+  } else {
+    btnRepeat.style.display = 'none';
+  }
+}
+
+function showStart() {
+  document.getElementById('screenResult').classList.add('hidden');
+  document.getElementById('screenTest').classList.add('hidden');
+  document.getElementById('screenStart').classList.remove('hidden');
+}
+</script>
+</body>
+</html>

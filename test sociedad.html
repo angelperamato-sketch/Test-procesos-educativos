@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Sociedad · Clínica Peramato</title>
+<style>
+  :root {
+    --lima: #8dc63f;
+    --lima-dark: #6fa82e;
+    --lima-light: #e8f5d0;
+    --bg: #f7f9f4;
+    --white: #ffffff;
+    --text: #1a1a1a;
+    --muted: #6b7280;
+    --border: #e0e7d6;
+    --danger: #ef4444;
+    --danger-light: #fef2f2;
+    --success: #22c55e;
+    --success-light: #f0fdf4;
+    --radius: 14px;
+    --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 8px rgba(141,198,63,0.08);
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .brand { font-size: 13px; font-weight: 700; color: var(--lima-dark); letter-spacing: 0.5px; }
+  .q-counter { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+  /* PROGRESS BAR */
+  .progress-wrap { background: var(--border); border-radius: 99px; height: 6px; overflow: hidden; }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--lima), var(--lima-dark));
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  /* SCOREBOARD */
+  .scoreboard {
+    display: flex;
+    gap: 10px;
+    padding: 10px 20px 0;
+    justify-content: center;
+  }
+  .score-pill {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 4px 12px;
+    font-size: 13px; font-weight: 600;
+  }
+  .score-pill .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-ok { background: var(--success); }
+  .dot-fail { background: var(--danger); }
+  .dot-pend { background: var(--muted); }
+
+  /* MAIN CARD */
+  .main { padding: 20px 16px; max-width: 600px; margin: 0 auto; }
+
+  .question-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px 20px 20px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+  .q-number {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    color: var(--lima-dark); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .q-text {
+    font-size: 16px; font-weight: 600; line-height: 1.5;
+    color: var(--text); margin-bottom: 20px;
+  }
+
+  /* OPTIONS */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt-btn {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 14px;
+    cursor: pointer;
+    font-size: 14px; line-height: 1.45;
+    text-align: left;
+    transition: all 0.15s ease;
+    width: 100%;
+    color: var(--text);
+  }
+  .opt-btn:active { transform: scale(0.98); }
+  .opt-btn:hover:not(:disabled) { border-color: var(--lima); background: var(--lima-light); }
+
+  .opt-letter {
+    flex-shrink: 0;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  /* ESTADOS */
+  .opt-btn.selected { border-color: var(--lima); background: var(--lima-light); }
+  .opt-btn.selected .opt-letter { background: var(--lima); border-color: var(--lima); color: white; }
+
+  .opt-btn.correct { border-color: var(--success); background: var(--success-light); }
+  .opt-btn.correct .opt-letter { background: var(--success); border-color: var(--success); color: white; }
+
+  .opt-btn.wrong { border-color: var(--danger); background: var(--danger-light); }
+  .opt-btn.wrong .opt-letter { background: var(--danger); border-color: var(--danger); color: white; }
+
+  .opt-btn:disabled { cursor: default; opacity: 1; }
+
+  /* FEEDBACK */
+  .feedback {
+    display: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 14px; font-weight: 600;
+    margin-bottom: 16px;
+    align-items: center; gap: 8px;
+  }
+  .feedback.show { display: flex; }
+  .feedback.ok { background: var(--success-light); color: #15803d; border: 1px solid #bbf7d0; }
+  .feedback.fail { background: var(--danger-light); color: #b91c1c; border: 1px solid #fecaca; }
+  .feedback-icon { font-size: 18px; }
+
+  /* NEXT BTN */
+  .btn-next {
+    display: none;
+    width: 100%;
+    background: linear-gradient(135deg, var(--lima), var(--lima-dark));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 15px;
+    font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 12px rgba(141,198,63,0.35);
+    letter-spacing: 0.3px;
+  }
+  .btn-next.show { display: block; }
+  .btn-next:active { transform: scale(0.97); }
+
+  /* PANTALLA INICIO */
+  .screen-start {
+    text-align: center;
+    padding: 40px 20px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .screen-start .icon { font-size: 56px; margin-bottom: 16px; }
+  .screen-start h1 { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+  .screen-start p { color: var(--muted); font-size: 15px; margin-bottom: 30px; line-height: 1.6; }
+  .btn-start {
+    background: linear-gradient(135deg, var(--lima), var(--lima-dark));
+    color: white; border: none; border-radius: 14px;
+    padding: 16px 40px; font-size: 17px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 16px rgba(141,198,63,0.4);
+    transition: transform 0.15s;
+    width: 100%;
+  }
+  .btn-start:active { transform: scale(0.97); }
+  .meta-info {
+    display: flex; gap: 12px; justify-content: center;
+    flex-wrap: wrap; margin-bottom: 28px;
+  }
+  .meta-chip {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 99px; padding: 6px 14px;
+    font-size: 13px; font-weight: 600; color: var(--muted);
+  }
+  .meta-chip span { color: var(--lima-dark); }
+
+  /* PANTALLA RESULTADO */
+  .screen-result { display: none; padding: 30px 20px; max-width: 500px; margin: 0 auto; }
+  .result-header { text-align: center; margin-bottom: 28px; }
+  .result-emoji { font-size: 60px; margin-bottom: 10px; }
+  .result-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+  .result-sub { color: var(--muted); font-size: 15px; }
+
+  .result-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px; margin-bottom: 24px;
+  }
+  .result-box {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 10px; text-align: center;
+  }
+  .result-box .num { font-size: 28px; font-weight: 800; }
+  .result-box .lbl { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+  .num-ok { color: var(--success); }
+  .num-fail { color: var(--danger); }
+  .num-pct { color: var(--lima-dark); }
+
+  .result-bar-wrap { margin-bottom: 24px; }
+  .result-bar-label {
+    display: flex; justify-content: space-between;
+    font-size: 13px; color: var(--muted); margin-bottom: 6px;
+  }
+  .result-bar { background: var(--border); border-radius: 99px; height: 10px; overflow: hidden; }
+  .result-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--lima), var(--lima-dark));
+    border-radius: 99px;
+    transition: width 1s ease;
+  }
+
+  .btn-group { display: flex; flex-direction: column; gap: 10px; }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--lima), var(--lima-dark));
+    color: white; border: none; border-radius: 12px;
+    padding: 15px; font-size: 16px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 12px rgba(141,198,63,0.35);
+    transition: transform 0.15s;
+  }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-secondary {
+    background: var(--white); color: var(--text);
+    border: 2px solid var(--border); border-radius: 12px;
+    padding: 15px; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .btn-secondary:hover { border-color: var(--lima); }
+
+  /* LISTA DE FALLOS */
+  .fail-list { margin-bottom: 24px; }
+  .fail-list-title {
+    font-size: 14px; font-weight: 700; color: var(--danger);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .fail-item {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+    font-size: 13px; line-height: 1.5;
+  }
+  .fail-item strong { color: var(--lima-dark); display: block; margin-bottom: 3px; font-size: 12px; }
+
+  /* HIDDEN */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- PANTALLA INICIO -->
+<div id="screenStart">
+  <div class="screen-start">
+    <div class="icon">📚</div>
+    <h1>Test Sociedad</h1>
+    <p>Banco de preguntas consolidadas. Las preguntas y respuestas se mezclan aleatoriamente en cada sesión.</p>
+    <div class="meta-info">
+      <div class="meta-chip">🎯 <span>144</span> preguntas</div>
+      <div class="meta-chip">🔀 Orden aleatorio</div>
+      <div class="meta-chip">📊 Registro de fallos</div>
+    </div>
+    <button class="btn-start" onclick="startTest(false)">Empezar test completo</button>
+  </div>
+</div>
+
+<!-- PANTALLA TEST -->
+<div id="screenTest" class="hidden">
+  <div class="header">
+    <div class="header-top">
+      <div class="brand">TEST SOCIEDAD</div>
+      <div class="q-counter" id="qCounter">Pregunta 1 de 144</div>
+    </div>
+    <div class="progress-wrap"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+
+  <div class="scoreboard">
+    <div class="score-pill"><div class="dot dot-ok"></div><span id="scoreOk">0</span> bien</div>
+    <div class="score-pill"><div class="dot dot-fail"></div><span id="scoreFail">0</span> mal</div>
+    <div class="score-pill"><div class="dot dot-pend"></div><span id="scorePend">144</span> rest.</div>
+  </div>
+
+  <div class="main">
+    <div class="question-card">
+      <div class="q-number" id="qNum">PREGUNTA 1 DE 144</div>
+      <div class="q-text" id="qText"></div>
+      <div class="options" id="optionsContainer"></div>
+    </div>
+
+    <div class="feedback" id="feedback">
+      <span class="feedback-icon" id="feedbackIcon"></span>
+      <span id="feedbackText"></span>
+    </div>
+
+    <button class="btn-next" id="btnNext" onclick="nextQuestion()">Siguiente →</button>
+  </div>
+</div>
+
+<!-- PANTALLA RESULTADO -->
+<div id="screenResult" class="screen-result hidden">
+  <div class="result-header">
+    <div class="result-emoji" id="resultEmoji">🎉</div>
+    <div class="result-title" id="resultTitle">¡Test completado!</div>
+    <div class="result-sub" id="resultSub"></div>
+  </div>
+
+  <div class="result-grid">
+    <div class="result-box">
+      <div class="num num-ok" id="rOk">0</div>
+      <div class="lbl">Correctas</div>
+    </div>
+    <div class="result-box">
+      <div class="num num-fail" id="rFail">0</div>
+      <div class="lbl">Falladas</div>
+    </div>
+    <div class="result-box">
+      <div class="num num-pct" id="rPct">0%</div>
+      <div class="lbl">Nota</div>
+    </div>
+  </div>
+
+  <div class="result-bar-wrap">
+    <div class="result-bar-label">
+      <span>Aciertos</span><span id="rBarLabel">0%</span>
+    </div>
+    <div class="result-bar"><div class="result-bar-fill" id="rBarFill" style="width:0%"></div></div>
+  </div>
+
+  <div class="fail-list" id="failList"></div>
+
+  <div class="btn-group">
+    <button class="btn-primary" id="btnRepeatFails" onclick="startTest(true)" style="display:none">🔁 Repetir solo falladas</button>
+    <button class="btn-primary" onclick="startTest(false)">🔄 Test nuevo completo</button>
+    <button class="btn-secondary" onclick="showStart()">← Volver al inicio</button>
+  </div>
+</div>
+
+<script>
+const ALL_QUESTIONS = [
+  {q:"¿Qué estilo parental combina permisividad con afecto?",opts:["Indulgente","Autoritario","Negligente","Controlador"],ans:0},
+  {q:"¿Qué se debe analizar en un centro para aplicar correctamente la educación intercultural?",opts:["El contexto sociocultural del alumnado","La carga horaria del profesorado","La cantidad de asignaturas opcionales","El uniforme escolar"],ans:0},
+  {q:"¿Qué factor influye negativamente en el rendimiento escolar según el informe PISA?",opts:["La pérdida de uno de los progenitores","El uso de nuevas tecnologías en el aula","El tipo de centro educativo","La preferencia por asignaturas prácticas"],ans:0},
+  {q:"¿Qué factor del entorno familiar puede dificultar el éxito escolar?",opts:["Falta de habilidades sociales y lingüísticas","Presión por rendir académicamente","Acceso a múltiples recursos tecnológicos","Supervisión estricta"],ans:0},
+  {q:"¿Qué dificultad enfrenta el alumnado inmigrante en el aula?",opts:["Desconocimiento del idioma","Falta de motivación docente","Falta de materiales escolares","Falta de compañeros de su país"],ans:0},
+  {q:"Entre las dificultades al afrontar la educación intercultural se encuentra:",opts:["Conocimiento del nivel curricular que poseen los grupos minoritarios que puede retrasar el aprendizaje.","Conocimiento del nivel intelectual que poseen los docentes que puede retrasar el aprendizaje.","Conocimiento del nivel curricular que poseen los grupos minoritarios que puede dejar atrás al grupo aula.","Conocimiento del nivel curricular que posee el grupo mayoritario que puede retrasar el aprendizaje."],ans:0},
+  {q:"¿Qué dimensión del estilo parental se asocia con la aceptación y apoyo al hijo?",opts:["Apoyo parental","Control parental","Coerción externa","Disciplina pasiva"],ans:0},
+  {q:"¿Qué característica presenta la familia de tipo I según Redding?",opts:["Dificultades de supervivencia","Alta implicación en la escuela","Elevada formación académica","Uso de lenguaje técnico"],ans:0},
+  {q:"¿Qué objetivo persigue la utilización de elementos interculturales en el aula?",opts:["Favorecer la interacción entre alumnos de diferentes procedencias","Reforzar la cultura mayoritaria","Separar por niveles culturales","Reducir el trabajo en equipo"],ans:0},
+  {q:"En 2022 la tasa de natalidad de España era:",opts:["La más baja de su historia","La más alta de su historia","La misma que en 1982","Inferior a la media europea"],ans:0},
+  {q:"¿Qué norma ancestral diferencia etológicamente al Homo sapiens del resto de mamíferos superiores?",opts:["La prohibición del incesto.","La adquisición de propiedades.","La adquisición de animales domésticos.","La ganadería y la agricultura."],ans:0},
+  {q:"Los padres son los encargados y poseen la competencia de ejercer:",opts:["La socialización primaria de los hijos.","La socialización secundaria de los hijos.","La socialización primaria de todos los integrantes de la familia, incluidos los abuelos.","La socialización terciaria."],ans:0},
+  {q:"¿Qué fenómeno caracteriza a las familias del sur de Europa en cuanto a la permanencia de los hijos en el hogar?",opts:["Prolongación de la dependencia familiar.","Independencia temprana.","Desvinculación emocional.","Ausencia de vínculos afectivos."],ans:0},
+  {q:"¿Cuál es uno de los principales factores que influyeron en la transformación de la familia tras la Revolución Industrial?",opts:["La incorporación masiva al trabajo asalariado.","La mejora de las condiciones rurales.","La vuelta al modelo matriarcal.","La disminución de la esperanza de vida."],ans:0},
+  {q:"La familia de tipo III:",opts:["Invierte poco tiempo y energía en el desarrollo de los hijos, además de esperar que sea la escuela la que asuma una mayor responsabilidad en su desarrollo.","Invierte mucho tiempo y energía en el desarrollo de los hijos, además de esperar que sea la escuela la que asuma menor responsabilidad en su desarrollo.","Es capaz de regalar tiempo y dinero a sus hijos, pero está muy poco preparada para entender sus necesidades.","No es capaz de regalar tiempo y dinero a sus hijos, pero está muy preparada para entender sus necesidades."],ans:0},
+  {q:"¿Cuál es el objetivo último del estilo parental autorizativo según el texto?",opts:["Promover la autonomía del hijo.","Obtener obediencia inmediata.","Evitar la participación de terceros.","Limitar la libertad de expresión."],ans:0},
+  {q:"¿Qué característica debe tener la educación intercultural?",opts:["Ser transversal en el currículo.","Ser aplicada únicamente en centros urbanos.","Basarse en contenidos religiosos.","Evitar el contacto entre culturas."],ans:0},
+  {q:"¿Qué factor impide frecuentemente la participación familiar en el centro educativo?",opts:["Horarios laborales incompatibles","Baja formación académica del alumno","Elevada renta familiar","Acceso a recursos digitales."],ans:0},
+  {q:"¿Qué aspecto puede limitar la implicación del profesorado con las familias?",opts:["Falta de habilidades comunicativas","Edad del alumno","Preferencia por materias técnicas","Tamaño del grupo-clase."],ans:0},
+  {q:"¿Qué barrera a la colaboración familia-escuela se menciona en el texto?",opts:["Desconfianza mutua","Uso excesivo de redes sociales","Exceso de tareas escolares","Falta de deberes"],ans:0},
+  {q:"¿Qué tipos de escuela pública hay básicamente en Europa respecto a titularidad?",opts:["La continental o cuya titularidad es estatal y la anglosajona cuya titularidad es local.","La estatal cuya titularidad depende de la Comisión Europea y la local cuya titularidad depende del Estado Nacional.","La estatal cuya titularidad depende de los Órganos electorales nacionales y la local cuya titularidad depende de las diputaciones.","La estatal que depende del Estado y la local que depende de las autonomías."],ans:0},
+  {q:"¿Qué metodología favorece un clima de respeto y tolerancia en el aula?",opts:["Cooperativa, socioafectiva y comunicativa","Memorización mecánica y competitiva","Evaluación estandarizada continua","Aprendizaje basado solo en contenidos"],ans:0},
+  {q:"¿Qué diferencia fundamental existe entre las escuelas de titularidad estatal y las de titularidad local?",opts:["El rol de los padres y su participación en la escuela.","Las tarifas e impuestos.","La calidad de los profesores.","El seguro sanitario de los estudiantes."],ans:0},
+  {q:"¿Qué tipo de familia espera que la escuela asuma la mayoría de funciones educativas?",opts:["Tipo III","Tipo I","Tipo II","Tipo IV"],ans:0},
+  {q:"¿Qué acción se recomienda para combatir estereotipos sexistas en la educación?",opts:["Analizar expresiones comunes y reflexionar sobre ellas","Evitar hablar de diferencias entre alumnos","Prohibir la interacción entre niños y niñas","Reforzar los roles tradicionales"],ans:0},
+  {q:"¿Qué diferencia a la coeducación de la educación mixta?",opts:["La coeducación promueve la igualdad real y el respeto a la diferencia","La educación mixta separa a niños y niñas en diferentes aulas","La coeducación se basa solo en el uso de materiales neutros","La educación mixta es exclusiva de centros públicos"],ans:0},
+  {q:"¿Qué condición mínima debe existir para que se dé una correcta educación intercultural?",opts:["Existencia de relaciones e intercambios entre individuos, grupos e instituciones de varias culturas.","Existencia de relaciones e intercambios entre individuos, grupos e instituciones dentro de una misma cultura.","No existencia de relaciones y ausencia de intercambios entre individuos, grupos e instituciones de varias culturas.","Existencia de relaciones e intercambios entre instituciones mercantiles de varias culturas democráticas."],ans:0},
+  {q:"¿Qué cambio demográfico ha acompañado a la transformación familiar?",opts:["Descenso de la natalidad","Aumento del número de hijos","Reducción de la esperanza de vida","Mantenimiento del número de matrimonios"],ans:0},
+  {q:"¿Cuál es una estrategia propuesta para implicar a la familia de tipo III?",opts:["Estructurar su interacción con los niños","Proveer asistencia social","Capacitar para la gestión escolar","Ofrecer formación laboral"],ans:0},
+  {q:"En la LOMLOE se menciona la obligación de las familias de participar de forma cooperativa en:",opts:["Proyectos de formación y las tareas que se les propongan desde el centro educativo.","Actividades recreativas en los tiempos de ocio y vacacionales dentro del recinto escolar.","Actividades concurso que fomenten el respeto entre las diferentes comunidades educativas.","Actividades dirigidas a la orientación laboral y la autogestión psicológica de permanencia en el paro."],ans:0},
+  {q:"¿Qué acciones podemos llevar a cabo para trabajar la coeducación en nuestras escuelas? (concienciación vs discriminación sexual)",opts:["Realizar actividades de concienciación en coeducación: intervenir en la realización de actividades en contra de la discriminación sexual y de género.","Realizar actividades de imposición en coeducación: intervenir en la manipulación de actividades en contra de la discriminación sexual y de género.","Realizar actividades de concienciación en coeducación: intervenir en la realización de actividades a favor de la discriminación sexual y de género.","Realizar actividades de concienciación en coeducación: intervenir en la realización de actividades en contra de la discriminación religiosa y étnica."],ans:0},
+  {q:"¿Cuál de estos factores define mejor la transformación de la familia en las últimas décadas?",opts:["La democratización de la autoridad de los cónyuges.","Compartir una hipoteca.","Ser políticamente activa.","Afrontar los desafíos propios de una sociedad tardomoderna."],ans:0},
+  {q:"¿Cuál es uno de los pilares fundamentales de la educación intercultural?",opts:["Reconocer explícitamente la diversidad cultural","Impartir todas las clases en una sola lengua","Separar a los alumnos según su origen","Evitar tratar temas culturales en clase"],ans:0},
+  {q:"La familia de tipo III (segunda aparición):",opts:["Invierte poco tiempo y energía en el desarrollo de los hijos, además de esperar que sea la escuela la que asuma una mayor responsabilidad en su desarrollo.","Invierte mucho tiempo y energía en el desarrollo de los hijos, además de esperar que sea la escuela la que asuma menor responsabilidad en su desarrollo.","Es capaz de regalar tiempo y dinero a sus hijos, pero está muy poco preparada para entender sus necesidades.","No es capaz de regalar tiempo y dinero a sus hijos, pero está muy preparada para entender sus necesidades."],ans:0},
+  {q:"¿Qué acciones podemos llevar a cabo para trabajar la coeducación en nuestras escuelas? (expresiones sexistas)",opts:["Analizar y reflexionar sobre las expresiones sexistas que son lesivas para la educación y la sociedad.","Prohibir y burlarse de las expresiones sexistas que son lesivas para la educación y la sociedad.","Castigar a quien utilice expresiones sexistas con sanciones que incluyan a sus padres.","Castigar a quien utilice expresiones sexistas con sanciones que conozcan sus padres."],ans:0},
+  {q:"¿Qué propuesta se menciona para atender la diversidad lingüística en el aula?",opts:["Combinar la lengua materna con el castellano","Usar solo castellano como lengua vehicular","Eliminar cualquier referencia cultural","Promover el uso del inglés únicamente"],ans:0},
+  {q:"La familia además de unidad de supervivencia es un espacio...",opts:["De intercambio emocional","De felicidad pero también de continuos conflictos","De consumo y endeudamiento","Donde se celebra la navidad."],ans:0},
+  {q:"¿Qué es el apoyo parental? (definición completa)",opts:["La conducta exhibida o manifestada por el padre o la madre hacia su hijo, que hace que el menor se sienta cómodo en su presencia, confirmándose que es aceptado y aprobado como persona.","La conducta exhibida o manifestada por el padre o la madre hacia su hijo, que hace que el menor se sienta cómodo pero atento en su presencia, confirmándose que es aceptado si se mantiene en alerta.","La conducta exhibida o manifestada por el padre o la madre hacia su hijo, que hace que el menor se sienta en perpetua vigilancia en su presencia, confirmándose que será castigado.","La ayuda necesaria que los padres deben recibir a cuenta de deducciones por parte del Ministerio de Hacienda."],ans:0},
+  {q:"¿Qué problema puede surgir si la escuela ignora la cultura vivencial del alumnado?",opts:["Desconexión entre lo aprendido y la realidad del estudiante","Mayor disciplina entre los alumnos","Aumento del rendimiento académico","Reducción del conflicto en clase"],ans:0},
+  {q:"También puede limitar u obstaculizar la colaboración eficaz de familia-escuela:",opts:["Falta de formación del profesorado","Sobrecualificación del profesorado","Ausencia de actividades extraescolares","Sobreabundancia de actividades extraescolares"],ans:0},
+  {q:"¿Qué acciones podemos llevar a cabo para trabajar la coeducación? (no agrupar por sexos)",opts:["No agrupar por sexos: agrupar potenciando las diferencias personales como valor añadido para el grupo.","No agrupar por sexos: agrupar potenciando las diferencias religiosas como valor añadido para el grupo.","No agrupar por sexos: agrupar potenciando las diferencias étnicas como valor añadido para el grupo.","No agrupar por sexos: agrupar potenciando las diferencias de capacidades intelectuales como valor añadido para el grupo."],ans:0},
+  {q:"¿Qué estilo educativo parental busca un equilibrio entre exigencia y afecto?",opts:["Autorizativo","Autoritario","Negligente","Indulgente"],ans:0},
+  {q:"Entre las dificultades al afrontar la educación intercultural se encuentra: (nivel económico)",opts:["El nivel económico bajo y su vinculación con el alumnado inmigrante.","El nivel económico medio y su vinculación con el alumnado inmigrante.","El nivel económico alto y su vinculación con el alumnado inmigrante.","El nivel económico bajo y su vinculación con el alumnado nativo."],ans:0},
+  {q:"¿Qué condición mínima debe existir para que se dé una correcta educación intercultural? (derecho de la diferencia)",opts:["Reconocer de manera explícita el derecho de la diferencia entre culturas.","Reconocer de manera explícita el derecho de la superioridad de la cultura occidental.","Reconocer de manera táctica no expresa el derecho de la diferencia entre culturas.","Reconocer de manera explícita el derecho de la validez de todas las culturas."],ans:0},
+  {q:"Según el grupo LISIS, sobre el fomento del Pigmalión positivo, ¿a qué factor se refiere cuando el docente mantiene actitudes de apertura, mostrándose espontáneo y comprensivo?",opts:["Output","Input","Clima","Feedback"],ans:2},
+  {q:"¿Qué papel tiene la escuela en la construcción de una sociedad no sexista?",opts:["Debe educar en igualdad junto a la familia","Su única función es instruir en contenidos curriculares","No tiene responsabilidad en temas de género","Debe delegar en asociaciones externas"],ans:0},
+  {q:"¿Qué hecho histórico marca un cambio en el concepto jurídico de familia?",opts:["La Revolución Francesa.","El concilio de Trento.","La caída del Imperio Romano.","La aparición del cristianismo."],ans:0},
+  {q:"¿Qué representa el conflicto entre Antígona y Creonte?",opts:["La rivalidad entre ciudades griegas","La oposición entre leyes políticas y leyes sagradas","La creación del Estado moderno","La aparición de la democracia"],ans:1},
+  {q:"La familia se considera la primera institución cultural porque:",opts:["Organiza la economía doméstica","Garantiza el poder político","Actúa como primer agente de socialización del ser humano","Sustituye la función de la escuela"],ans:2},
+  {q:"¿Qué modelo familiar predominó en la organización histórica de sociedades occidentales?",opts:["Igualitario","Matriarcal","Patriarcal","Comunitario"],ans:2},
+  {q:"¿Qué transformación social favoreció una mayor libertad individual en la concepción de la familia?",opts:["La Edad Media","La Revolución Francesa","El feudalismo","La Ilustración griega"],ans:1},
+  {q:"¿Qué dimensión del estilo parental hace que el menor se sienta aceptado y valorado?",opts:["Control parental","Disciplina coercitiva","Apoyo parental","Supervisión académica"],ans:2},
+  {q:"¿Qué estilo educativo parental combina comunicación, razonamiento y establecimiento de límites?",opts:["Negligente","Autoritario","Indulgente","Autorizativo"],ans:3},
+  {q:"Los hijos educados en un estilo autoritario suelen presentar:",opts:["Alta autoestima y confianza","Conductas conflictivas e irritabilidad","Gran autonomía emocional","Elevada capacidad de autocontrol"],ans:1},
+  {q:"¿Qué caracteriza a las familias de tipo III?",opts:["Priorizan la supervivencia económica","Dedican mucho tiempo a la crianza","Esperan que la escuela asuma gran parte de la educación","Mantienen una estructura familiar extensa"],ans:2},
+  {q:"¿Qué aspecto se destaca como fundamental para mejorar la calidad educativa?",opts:["El aumento de deberes escolares","La participación activa de las familias","La reducción de actividades extraescolares","La disminución de tutorías"],ans:1},
+  {q:"¿Cuál de las siguientes situaciones puede dificultar la colaboración entre familia y escuela?",opts:["El exceso de actividades culturales","La falta de tiempo y disponibilidad de ambas partes","La participación de las familias en tutorías","El uso de entrevistas personales"],ans:1},
+  {q:"¿Qué consecuencias suele tener el estilo autoritario en los hijos según Baumrind?",opts:["Desconfianza y conflictividad","Alta autoestima y autonomía","Impulsividad y creatividad","Indiferencia emocional"],ans:0},
+  {q:"Los diferentes estilos parentales tienen que ver con:",opts:["Las actitudes que surgen a la hora de ejercer la autoridad.","Las actitudes que surgen a la hora de resolver conflictos.","Los caracteres psicológicos de los padres.","El temperamento y el entorno social de los padres."],ans:0},
+  {q:"En la Ley Orgánica de Educación (LOE, 2006):",opts:["Se desarrolla más que las anteriores la conveniencia del funcionamiento adecuado de asociaciones en las que participan las familias.","Se desarrolla más que las anteriores la conveniencia del funcionamiento adecuado de sindicatos de estudiantes.","Desarrolla más que las anteriores la importancia de la participación de las familias en la redacción del Régimen Interno del Centro.","Desarrolla más que las anteriores la importancia de la participación de los estudiantes en la redacción del Régimen Interno del Centro."],ans:0},
+  {q:"Entre las dificultades al afrontar la educación intercultural se encuentra: (intervención familias)",opts:["Poca intervención por parte de las familias en los centros.","Una intervención fluida por parte de las familias en los centros.","Una intervención institucional por parte de las familias en los centros.","Poca intervención por parte de los servicios sociales en los centros."],ans:0},
+  {q:"¿Qué es coeducar?",opts:["Coeducar es el método de intervención educativo que va más allá de la educación mixta y cuyas bases se asientan en el reconocimiento de las potencialidades e individualidades de niñas y niños, independientemente de su sexo.","Coeducar es el método de intervención educativo que se asimila a la educación mixta, es decir, sus bases se asientan en la educación de niñas y niños conjuntamente.","Coeducar es el método de intervención educativo que va más allá de la educación mixta y cuyas bases se asientan en el reconocimiento de la igualdad entre niñas y niños, como si el sexo no existiera.","Coeducar es el método de intervención educativo que retrocede de la educación mixta y cuyas bases se asientan en la antigua segregación entre niñas y niños."],ans:0},
+  {q:"El estilo autorizativo suele buscar un equilibrio entre:",opts:["El estilo autoritario y el indulgente.","El estilo negligente y indulgente.","El estilo autoritario y negligente.","Todos los grados del estilo autoritario."],ans:0},
+  {q:"El fracaso escolar:",opts:["Es el hecho de no conseguir terminar el ciclo académico obligatorio de un sistema educativo.","Es el hecho de no conseguir terminar cualquier ciclo académico de un sistema educativo.","Es el hecho de conseguir terminar el ciclo académico obligatorio con 2 asignaturas instrumentales.","Es el hecho de conseguir terminar el ciclo académico obligatorio con 2 o más asignaturas pendientes."],ans:0},
+  {q:"¿Qué otras acciones podemos llevar a cabo para trabajar la coeducación? (no agrupar — segunda)",opts:["No agrupar por sexos: agrupar potenciando las diferencias personales como valor añadido para el grupo.","No agrupar por sexos: agrupar potenciando las diferencias étnicas como valor añadido para el grupo.","No agrupar por sexos: agrupar potenciando las diferencias religiosas como valor añadido para el grupo.","No agrupar por sexos: agrupar potenciando las diferencias de capacidades intelectuales como valor añadido para el grupo."],ans:0},
+  {q:"¿Qué efecto tiene una relación conflictiva entre los padres sobre el rendimiento escolar del menor?",opts:["Aumenta el riesgo de fracaso escolar.","Motiva una mejora en el rendimiento.","Favorece la autonomía del estudiante.","No tiene efecto relevante."],ans:0},
+  {q:"¿Qué acontecimiento histórico revoluciona radicalmente el concepto de familia en Occidente?",opts:["La revolución sexual y la emancipación de la mujer","El descubrimiento de Internet","La nueva legislación sobre el matrimonio homosexual","La normalización de las familias monoparentales"],ans:0},
+  {q:"También puede limitar u obstaculizar la colaboración eficaz de familia-escuela: (desconfianza)",opts:["La desconfianza, desencanto y/o bajas expectativas del profesorado hacia la familia (y viceversa)","La confianza, esperanza y/o altas expectativas del profesorado hacia la familia (y viceversa)","Las diferencias intergeneracionales entre profesores y padres","Las diferencias de formación entre profesores y padres"],ans:0},
+  {q:"Desde la escuela, puede existir la percepción de que la participación de las familias puede interferir en los métodos de enseñanza del profesorado, por lo que:",opts:["Se muestran reticentes a dar un grado de poder a estos","Se muestran complacidos para dar un grado de poder a estos","Prefieren denegar su participación en la escuela a estos","Prefieren pedir más participación en la escuela a estos"],ans:0},
+  {q:"La competencia parental en la sociedad democrática es:",opts:["La capacidad de los padres para educar a sus hijos mediante el ejercicio de su rol parental","La capacidad de los padres de educar a los hijos con autoridad democrática","La capacidad de los padres de educar a los hijos sin dañarlos emocionalmente","La capacidad de los padres de educar a los hijos en circunstancias adversas"],ans:0},
+  {q:"Resulta imprescindible que las familias consideren al centro escolar como una fuente de ayuda que complementa la formación de sus hijos y no:",opts:["Como algo que les sustituye o entorpece sus funciones.","Como algo que comparte sus mismos fines.","Como un centro recreativo cerrado en verano.","Como un centro educativo cerrado en navidades."],ans:0},
+  {q:"La implicación de las familias en el contexto escolar puede emparentarse directamente con:",opts:["El buen funcionamiento del centro, con la buena relación entre alumnos y equipos docentes y, sobre todo, con el fracaso escolar.","El buen funcionamiento del centro, con la buena relación entre alumnos y equipos docentes y, sobre todo, con la fluidez burocrática entre familia y escuela.","El buen funcionamiento del centro, con la buena relación entre alumnos y equipos docentes y, sobre todo, con la disciplina general del entorno educativo.","El buen funcionamiento del centro, con la buena relación entre alumnos y equipos docentes y, sobre todo, la relación entre padres y administración."],ans:0},
+  {q:"El estilo parental es:",opts:["El conjunto de prácticas que utilizan los padres para que sus hijos alcancen los objetivos de la socialización primaria.","El conjunto de prácticas que utilizan los padres para que sus hijos alcancen los objetivos de la socialización secundaria.","El conjunto de prácticas que utilizan los padres para que sus hijos se incorporen sanos al mercado de trabajo.","La actitud o la moda con que los padres se distinguen en cada época histórica o lugar."],ans:0},
+  {q:"En la LOGSE (1990) se menciona por primera vez:",opts:["La relevancia de la participación de los familiares para mejorar la calidad del sistema educativo.","La relevancia de las actividades extraescolares para completar el currículo de los estudiantes.","La relevancia de la participación de los padres en la creación del PAC.","La relevancia de la participación de los familiares y el claustro para la elección de la dirección."],ans:0},
+  {q:"Entre las características individuales del alumno que pueden derivar en fracaso escolar podemos distinguir 3:",opts:["El nivel motivacional del alumno, su esfuerzo y la percepción que tiene del apoyo y la ayuda de sus padres.","El nivel motivacional del alumno, su esfuerzo y la percepción que tiene del apoyo y las becas de ayuda al estudio.","El nivel de hiperactividad del alumno, su esfuerzo y la percepción que tiene del apoyo y la ayuda de sus padres.","El nivel motivacional del alumno, su falta de rendimiento en las clases de refuerzo y la percepción que tiene del apoyo y la ayuda de sus padres."],ans:0},
+  {q:"En el informe PISA (8ª edición 2022) de diciembre de 2023, los datos sobre fracaso escolar en España han sido:",opts:["Los peores de la historia.","Las mejores de la historia.","Un tanto peores que la media europea.","Un tanto mejores que la media europea."],ans:0},
+  {q:"¿Desde qué época empieza a descender a su mínima expresión la familia?",opts:["La era industrial.","El neolítico.","La revolución francesa.","El advenimiento del feminismo."],ans:0},
+  {q:"¿Qué condición mínima debe existir para que se dé una correcta educación intercultural? (diversidad cultural)",opts:["Reconocer la existencia de una diversidad cultural.","Reconocer la existencia de la demolición cultural.","Reconocer la existencia de la imposición cultural.","Reconocer la existencia de la pluralidad cultural atomizada."],ans:0},
+  {q:"Entre las dificultades al afrontar la educación intercultural se encuentra: (idioma)",opts:["La incomprensión o desconocimiento del idioma utilizado en el aula dificulta la comunicación entre los docentes y sus alumnos.","La incomprensión o desconocimiento del idioma utilizado en el aula facilita la comunicación entre los docentes y sus alumnos.","La comprensión o conocimiento del idioma utilizado en el aula dificulta la comunicación entre los docentes y sus alumnos.","La comprensión o conocimiento del idioma del grupo minoritario en el aula dificulta la comunicación entre los docentes y sus alumnos."],ans:0},
+  {q:"La interculturalidad en el ámbito educativo busca:",opts:["Lograr una convivencia enriquecedora entre diversos grupos minoritarios dentro del espacio educativo.","Lograr una convivencia enriquecedora entre el grupo mayoritario y los minoritarios dentro del espacio de ocio.","Lograr una convivencia enriquecedora entre diversos grupos mayoritarios dentro del espacio educativo.","Lograr una convivencia transgresora de los grupos minoritarios en el grupo mayoritario dentro del espacio educativo."],ans:0},
+  {q:"La familia de tipo II:",opts:["Invierte poco tiempo y energía en el desarrollo de los hijos, además de esperar que sea la escuela la que asuma una mayor responsabilidad en su desarrollo.","Invierte mucho tiempo y energía en el desarrollo de los hijos, además de esperar que sea la escuela la que asuma menor responsabilidad en su desarrollo.","Es capaz de regalar tiempo y dinero a sus hijos, pero está muy poco preparada para entender sus necesidades.","No es capaz de regalar tiempo y dinero a sus hijos, pero está muy preparada para entender."],ans:0},
+  {q:"La pedagogía de la desescolarización:",opts:["Es la escuela defendida por el Partido Anarquista Americano","Es la educación tal como la proyectó León Trotsky","Trata de suprimir la inspección y la dirección de los centros y defender una participación sin presiones junto con abolición de la escolaridad postobligatoria y de los diplomas.","Trata de suprimir las instituciones y estructuras y defender una participación sin presiones junto con la abolición de la escolaridad obligatoria y de los diplomas."],ans:3},
+  {q:"Organizar espacios y actividades de manera igualitaria para trabajar la coeducación:",opts:["Organizar espacios y actividades de manera diferenciada: ofrecer una amplia gama de actividades y materiales para que los alumnos puedan expresar las diferencias con espacios y colores.","Organizar espacios y actividades de manera diversa: ofrecer una amplia gama de actividades y materiales para todos los alumnos, condicionando los espacios y colores en razón de sexos.","Organizar espacios y actividades de manera igualitaria: ofrecer una amplia gama de actividades y materiales para todos los alumnos, sin condicionar los espacios y colores.","Organizar espacios y actividades de manera igualitaria: ofrecer una actividad única y monotemática para todos los alumnos, sin utilizar espacios y colores diversos sino exclusivos."],ans:2},
+  {q:"¿La relación entre qué dos factores genera las tipologías de estilos disciplinares?",opts:["Permisividad y rigidez","Implicación y coerción","Permisividad y coerción","Implicación y rigidez"],ans:1},
+  {q:"¿Qué condición tiene la representación de padres y alumnos en el consejo escolar?",opts:["Son mayoría en el consejo","Tienen veto sobre las decisiones del claustro","No pueden ser menos de un tercio del consejo","Pueden elegir al director del centro"],ans:2},
+  {q:"La diversidad de las familias en la actualidad es correlativa a:",opts:["La velocidad del cambio en la sociedad de la información y la comunicación.","La diversidad de nuestras sociedades en fragmentación y en continuo movimiento laboral y migratorio.","La precariedad laboral y la desprotección del Estado.","El bajo nivel adquisitivo de los trabajadores por cuenta de otros."],ans:1},
+  {q:"Una buena relación entre docentes y alumnos debe caracterizarse por cuatro aspectos fundamentales:",opts:["Transparencia, preocupación por los demás, individualidad, cuando cada uno sabe que es apreciado por el otro y satisfacción de las necesidades mutuas.","Transparencia, preocupación por los demás, creatividad y autoayuda de las necesidades propias.","Transparencia discreta, preocupación por sí mismos, individualidad por encima de todo y satisfacción de las necesidades mutuas sin comprometer las propias.","Transparencia, preocupación por sí mismos, individualidad, cuando cada uno sabe que es apreciado por el otro y satisfacción de las necesidades mutuas sin comprometer las propias."],ans:0},
+  {q:"Los objetivos de la educación de sus hijos son:",opts:["Promocionar su autonomía, su salud psíquica y física, y su socialización a cualquier precio, aunque cueste la salud de los padres.","Promocionar su sumisión a la labor del Estado evitando perspectivas particulares para su inclusión en la igualdad.","Promocionar su incorporación al mundo laboral con el menor número de conflictos posible.","Promocionar su autonomía, su salud psíquica y física, y su socialización dentro de un clima de máximo bienestar y calidad de vida."],ans:3},
+  {q:"¿Qué acciones podemos llevar a cabo para trabajar la coeducación? (revisar lenguaje y materiales)",opts:["Revisar el lenguaje y los materiales que se usan habitualmente, en especial la literatura: adquirir nuevos títulos que perpetúen estereotipos y hacer uso de los clásicos en su acepción original.","Revisar el lenguaje y los materiales que se usan habitualmente, en especial la literatura: adquirir nuevos títulos que rompan estereotipos y hacer uso de los clásicos de manera correcta.","Revisar el lenguaje de signos que se usan habitualmente, en especial el científico: utilizar nuevos signos que rompan estereotipos y hacer uso de estos de manera correcta.","Revisar el lenguaje y los materiales que se usan habitualmente, en especial las matemáticas: adquirir nuevos títulos que rompan estereotipos y hacer uso de la trigonometría de manera correcta."],ans:1},
+  {q:"¿Qué acciones podemos llevar a cabo para trabajar la coeducación en nuestras escuelas? (señala la incorrecta)",opts:["Reconocer la existencia de la diversidad cultural.","No agrupar por sexos.","Revisar el lenguaje y los materiales que se usan.","Analizar y reflexionar sobre las expresiones sexistas."],ans:0},
+  {q:"Las familias de tipo I, las similares a la era pre-industrial:",opts:["Fomentan el desarrollo de sus hijos y consideran que deben participar en el papel educativo de la escuela.","Limitan el desarrollo de sus hijos y consideran que el papel de la escuela es liberar a los niños de sus familias.","Consideran que el papel de la escuela es enseñar a sus hijos a leer y escribir.","Consideran que el papel de la escuela es preparar a sus hijos para el entorno rural."],ans:1},
+  {q:"La familia tipo I según Redding (1991):",opts:["Vive en un nivel de subsistencia, permanece atrapada en las demandas diarias de sus hijos y no cuenta con sus hijos para trabajar.","Es el tipo deseable igualitaria de familia que se quieren alcanzar cuando se obtienen los beneficios de su participación.","Vive en un nivel de subsistencia, permanece atrapada en las demandas diarias del trabajo y cuenta con los hijos para trabajar. Estas familias limitan el desarrollo de sus hijos y consideran que el papel de la escuela es liberar a los niños de sus familias.","La crianza de sus hijos empieza a suponer una barrera para sus propósitos adultos. Están absorbidas por los intereses profesionales o personales y pasan poco tiempo con sus hijos."],ans:2},
+  {q:"Las familias tipo I 'disponible pero alienado' no tienden a presionar a la escuela, pero sus hijos suelen necesitar:",opts:["Disciplina.","Apoyo.","Teoría.","Tratamiento psicológico."],ans:1},
+  {q:"La Ley Orgánica de Calidad de la Educación (LOCE, 2002) incluye:",opts:["La participación de los familiares en los órganos de inspección del centro.","La participación de los familiares en el Consejo Escolar, como órgano de gestión y control.","La participación de los familiares en las actividades extraescolares.","La participación de los familiares como Asociación de Padres de Alumnos."],ans:1},
+  {q:"El menor cuyo progenitor utiliza un estilo autoritario sería:",opts:["Conflictivo, irritable, descontento y desconfiado.","Impulsivo y agresivo.","Asertivo y con una autoestima elevada.","Enérgico y decidido."],ans:0},
+  {q:"Señala los cambios que han influido en la definición de familia en función de las pautas demográficas:",opts:["Aumento de la esperanza de vida y descenso de la natalidad.","Se produce una prolongación del 'nido sin usar' y del 'nido vacío'.","Aumento de los hogares unipersonales.","Nuevas formas de entender la pareja y los proyectos vitales."],ans:0},
+  {q:"Musitu y García (2004) desarrollan un modelo bidimensional relativo a:",opts:["La coerción de los padres y su implicación con cuatro estilos parentales.","La coerción de los padres y su implicación con tres estilos parentales.","La coerción y negligente de los padres con cuatro estilos parentales.","La coerción y autoridad de los padres con cuatro estilos parentales."],ans:0},
+  {q:"¿De qué tipo de socialización se encarga la familia?",opts:["De la socialización primaria de los hijos e hijas.","De la socialización secundaria de los hijos e hijas.","De la socialización terciaria.","Ninguna opción es correcta."],ans:0},
+  {q:"El control parental:",opts:["Se relaciona con el grado de esfuerzo que hace el padre o la madre por determinar la conducta de su hijo, esto es, con el grado de control que se pueda alcanzar.","Se relaciona con el grado de laxitud permisividad que tiene el padre o la madre en el trato con su hijo y no tanto con el grado de control que se pueda alcanzar.","Es la autoridad que los padres tienen sobre los profesores de la etapa obligatoria de escolarización.","Se relaciona con el grado de esfuerzo que hace el padre o la madre por influir en su hijo y no tanto con el grado de control que se pueda alcanzar."],ans:0},
+  {q:"¿Para qué tipo de socialización es necesaria la educación de los padres?",opts:["La educación de los padres es válida en sí misma.","Para la educación terciaria.","Para la educación secundaria.","Para la educación primaria."],ans:3},
+  {q:"El estilo parental podría definirse como:",opts:["Una constelación entre actitudes autoritarias hacia su hijo que, consideradas conjuntamente, crean un clima emocional inapropiado en el que se expresan las conductas de sus progenitores o adultos a su cargo.","Una constelación de actitudes hacia su hijo que, consideradas conjuntamente, crean un clima emocional en el que se expresan las conductas de sus progenitores o adultos a su cargo.","El arte de ser padres con cierta categoría que permite diferenciarse en las reuniones escolares o deportivas.","Una constelación de actitudes negligentes hacia su hijo que, consideradas conjuntamente, crean un clima emocional adverso en el que se expresan las conductas de sus progenitores o adultos a su cargo."],ans:1},
+  {q:"Las relaciones intergeneracionales referidas al profesor o profesora:",opts:["Desempeña un doble rol en la relación con su alumnado: por un lado, determina lo que deben aprender sus estudiantes, el contenido del currículo, y organiza las clases, es decir, desempeña el rol de instructor, esto es, debe mantener la disciplina en el aula.","Con su doble rol sobre el cómo y el qué se da en clase, se relaciona con los alumnos como héroe y villano pudiendo hacer tanto bien como mal.","Con su doble rol respecto a los alumnos sobre lo que deben aprender y cómo lo deben aprender pueden sustituir a los padres como ejemplo a seguir.","Con su doble rol respecto a los alumnos sobre lo que deben aprender y cómo lo deben aprender nunca pueden sustituir a los padres como ejemplo a seguir."],ans:0},
+  {q:"Entre algunas de las características individuales del alumno que pueden derivar en fracaso escolar encontramos:",opts:["La gestión de los centros educativos, la práctica docente, la administración educativa y los métodos de enseñanza de los profesores.","Su esfuerzo, su implicación en su propio proceso de aprendizaje, la cultura, su autosuficiencia, sus actividades y creencias con relación a la enseñanza, problemas de aprendizaje y la relación del alumno con su entorno.","Su esfuerzo, su implicación en su propio proceso de aprendizaje, sus intereses, su autosuficiencia, sus actitudes y creencias con relación a la enseñanza y problemas de aprendizaje.","El nivel socioeconómico de la familia, la cultura, la relación del alumno con su entorno, clase social y origen del alumno, la profesión de los padres, el nivel motivacional del alumno, su esfuerzo, sus intereses y problemas de aprendizaje."],ans:2},
+  {q:"En el efecto Pigmalión el clima:",opts:["Se compone de todos los mensajes verbales que emite el docente.","Se compone de todos los mensajes no verbales que emite el docente.","Se refiere a las expectativas que tiene el profesor en relación al rendimiento de sus alumnos.","Alude a la cantidad de información que el profesor proporciona a su estudiante o grupo-clase."],ans:1},
+  {q:"El proceso de influencia mediante el cual las expectativas del profesorado influyen en el comportamiento del alumnado se conoce como:",opts:["Efecto Pigmalión.","Efecto camaleón.","Proceso motivador.","Proceso de alusión."],ans:0},
+  {q:"¿Qué fenómeno se refiere al efecto en el que las expectativas de un docente influyen en el rendimiento del alumnado?",opts:["Efecto placebo.","Efecto Halo.","Efecto Pigmalión.","Personal."],ans:2},
+  {q:"Según el Efecto Pigmalión, ofrecer más información al alumnado del que se espera un mejor rendimiento correspondería a:",opts:["Factor Clima del Pigmalión Positivo.","Factor Output del Pigmalión Positivo.","Factor Input del Pigmalión Positivo.","Factor Output del Pigmalión Negativo."],ans:2},
+  {q:"En la LOMLOE (2020-2023) se menciona la obligación de las familias de participar de forma cooperativa en:",opts:["Actividades concurso que fomenten el respeto entre las diferentes comunidades educativas.","Proyectos de formación y las tareas que se les propongan desde el centro educativo.","Actividades recreativas en los tiempos de ocio y vacacionales dentro del recinto escolar.","Actividades dirigidas a la orientación laboral y la autogestión psicológica de permanencia en el paro."],ans:1},
+  {q:"Una buena relación docente-alumnado se caracteriza por:",opts:["La individualidad.","La transparencia.","La satisfacción de necesidades.","Todas las opciones son correctas."],ans:3},
+  {q:"La claridad expositiva del profesorado y el ofertar optativamente son comportamientos:",opts:["Desmotivadores.","Motivadores.","Participativos.","Arriesgados."],ans:1},
+  {q:"Entre las posibles causas del fracaso escolar se encuentran:",opts:["Las aficiones musicales del alumnado.","Los problemas de aprendizaje, el esfuerzo y la motivación.","El aspecto físico y tono de voz del profesorado.","La religión que siga el centro."],ans:1},
+  {q:"El estilo parental caracterizado por altos niveles de apoyo y bajos niveles de control se denomina:",opts:["Permisivo o indulgente.","Evitativo.","Autoritario.","Democrático o autorizativo."],ans:0},
+  {q:"¿Cuál de los siguientes factores NO es una barrera para que la familia participe en la escuela?",opts:["La existencia de canales de comunicación.","El desconocimiento por parte de las familias.","La falta de sintonía con el proyecto institucional.","La falta de formación del profesorado en orientación."],ans:0},
+  {q:"El término de 'coeducación' se refiere a:",opts:["Una educación intercultural.","Una educación colaborativa entre todos los miembros de las comunidades.","Una educación que reconoce las potencialidades de niñas y niños independientemente de su sexo.","Una educación contundente."],ans:2},
+  {q:"¿Cuál de las siguientes opciones no corresponde a una de las dificultades para trabajar la interculturalidad?",opts:["Conocimiento del nivel curricular por parte del alumnado.","Poca intervención de la familia migrante.","Incomprensión del idioma vehicular.","Xenofobia implícita."],ans:0},
+  {q:"La coeducación defiende:",opts:["La educación entre familia-escuela.","La enseñanza libre de estereotipos y prejuicios de género.","La equidad de la enseñanza.","Los valores éticos."],ans:1},
+  {q:"¿Qué principio defiende la participación igualitaria entre las diferentes culturas?",opts:["La multiculturalidad.","La coeducación.","La interculturalidad.","La globalización."],ans:2},
+  {q:"¿Cómo podemos saber la actuación del carácter intercultural?",opts:["Análisis del contexto.","Promover actividades.","Planteamiento de la convivencia.","Acciones específicas."],ans:0},
+  {q:"Cambios que influyen en el nuevo concepto de familia:",opts:["Cambios en las pautas familiares.","Cambios sociales de alcance global.","Cambios en las pautas demográficas.","Todas las respuestas son ciertas."],ans:3},
+  {q:"Ser profesor implica:",opts:["Una oportunidad de crecer.","Una obligación.","Tener las cualidades necesarias.","Recordar aspectos relevantes de la profesión."],ans:0},
+  {q:"Los estilos parentales autoritarios se correlacionan con hijos de rasgos:",opts:["Conflictivos pero confiables, descontentos pero agradecidos.","Conflictivos, amables, descontentos y confiados.","Irritables, contentadizos, desconfiados y resueltos.","Conflictivos, irritables, descontentos y desconfiados."],ans:3},
+  {q:"Entre las características individuales del alumno que pueden derivar en fracaso escolar encontramos: (señala la incorrecta)",opts:["La profesión de los padres.","El nivel de motivación del alumnado.","Sus intereses.","Problemas de aprendizaje."],ans:0},
+  {q:"¿Cuál es el tipo de familia predominante en España?",opts:["Tradicional.","Monoparental.","Unipersonal.","Reconstruida."],ans:0},
+  {q:"Organizar espacios y actividades de manera igualitaria sin condicionar espacios y colores:",opts:["No le permite al alumnado la oportunidad de intentar hacer algo que quizás dentro del entorno escolar tengan permitido.","Permite al alumnado la oportunidad de intentar hacer algo que quizás fuera del entorno escolar no tengan permitido, o no se atrevan por vergüenza.","Todas las respuestas son correctas.","Puede permitirle o no según el centro escolar la titularidad que tenga."],ans:1},
+  {q:"¿Qué institución se responsabiliza de la socialización secundaria?",opts:["El Ministerio.","La Familia.","La Escuela.","El Gobierno."],ans:2},
+  {q:"En referencia a la crianza de los hijos, 'una constelación de actitudes hacia su hijo, basadas en puesta de límites y respuestas afectivas o no, que crean un clima emocional en el que se expresan las conductas de sus progenitores o adultos a su cargo', ¿a qué hace referencia?",opts:["Constelación familiar.","Estilo parental.","Clima familiar.","Control de conducta."],ans:1},
+  {q:"Según el grupo LISIS, sobre el fomento del Pigmalión positivo, ¿a qué factor se refiere cuando el docente ofrece más detalladamente una valoración de los resultados?",opts:["Clima.","Feedback.","Input.","Output."],ans:1},
+  {q:"¿Cuál de las siguientes opciones no es una barrera de la participación familiar en la escuela?",opts:["La falta de educación parental.","Falta de formación del profesorado en el desarrollo de la función orientadora.","Falta de tiempo y de disponibilidad.","Falta de sintonía con el proyecto institucional."],ans:0},
+  {q:"¿Cuál de las siguientes opciones puede representar una barrera de la participación familiar en la escuela?",opts:["Las diferencias intergeneracionales entre profesores y padres y madres.","La confianza, esperanza y/o altas expectativas del profesorado hacia la familia (y viceversa).","La desconfianza, desencanto y/o bajas expectativas del profesorado hacia la familia (y viceversa).","Las diferencias de formación entre profesores y padres y madres."],ans:2},
+  {q:"¿Qué acciones podemos llevar a cabo para trabajar la coeducación? (intervenir contra discriminación sexual)",opts:["Intervenir en la realización de actividades en contra de la discriminación religiosa y étnica.","Intervenir en la realización de actividades a favor de la discriminación sexual y de género.","Intervenir en la realización de actividades en contra de la discriminación sexual y de género.","Intervenir en la manipulación de actividades en contra de la discriminación sexual y de género."],ans:2},
+  {q:"¿Qué acciones podemos llevar a cabo para trabajar la coeducación en nuestra aula de Educación Física?",opts:["Determinar juegos por roles de género.","Revisar el lenguaje y los materiales que se usan habitualmente en los juegos olímpicos.","Permitir la elección libre de actividades, sin que vayan destinadas a un sexo o a otro.","Permitir que los alumnos se unan a grupos de su mismo sexo, porque se sienten más cómodos."],ans:2},
+  {q:"La capacidad de los padres para educar a sus hijos mediante el ejercicio de su rol parental se llama:",opts:["Competencia parental.","Autoridad parental.","Crianza parental.","Educación parental."],ans:0},
+  {q:"La socialización primaria corresponde a:",opts:["La familia extensa.","La familia.","Los iguales.","El estado."],ans:1},
+  {q:"Dar prioridad en la evaluación a los contenidos procedimentales frente a los conceptuales, por desconexión entre los estilos laborales de los padres y los académicos entre el alumnado de nuevo ingreso o de origen migrante, se entiende como:",opts:["Una medida de carácter específico para trabajar la interculturalidad.","Una medida de carácter general para desarrollar una evaluación equitativa.","Una intervención fluida por parte de los docentes en los centros.","Una estrategia de fomento de la igualdad de oportunidades a través de la coeducación."],ans:0},
+  {q:"La combinación de competencias mixtas en una actividad grupal física, ¿qué método se estaría trabajando?",opts:["Colaboración heterogénea.","Coeducación.","Interculturalidad.","Aprendizaje cooperativo."],ans:1},
+  {q:"Cuando dentro de una misma familia se identifican diferentes miembros de diferentes generaciones, ¿a qué tipo de familia nos referimos?",opts:["Tradicional.","Extensa.","Nuclear.","Contemporánea."],ans:1},
+  {q:"El estilo autorizativo suele buscar un equilibrio entre: (segunda versión)",opts:["El estilo negligente e indulgente.","La puesta de límites y la responsividad afectiva de manera consecuente y directa.","Todos los grados del estilo autoritario.","La coerción de cualquier tipo de conducta y la ausencia de afecto."],ans:1},
+  {q:"¿Qué es el apoyo parental? (respuesta B)",opts:["La ayuda necesaria que los padres deben recibir a cuenta de deducciones por parte del Ministerio de Hacienda.","La respuesta afectiva de los progenitores hacia sus hijos, que hace que se sientan escuchados y protegidos.","La respuesta afectiva de los progenitores hacia sus hijos, que hace que se sientan en perpetua vigilancia en su presencia, confirmándoles que serán castigados.","La respuesta afectiva de los progenitores hacia sus hijos, que hace que se sientan cómodos pero atentos en su presencia, confirmándoles que son aceptados si se mantienen en alerta."],ans:1},
+  {q:"El apoyo parental:",opts:["Es la conducta exhibida o manifestada por el padre o la madre hacia su hijo, que hace que el menor se sienta cómodo en su presencia, confirmándole que es aceptado y aprobado como persona.","Es, junto con el castigo parental, una de las dos dimensiones de los estilos parentales.","Se relaciona con el grado de esfuerzo que hace el padre o la madre por influir en su hijo y con el grado de control que se pueda alcanzar para conseguir un eficaz desarrollo.","Se relaciona con el grado de esfuerzo que hace el padre o la madre por influir en su hijo y no tanto con el grado de control que se pueda alcanzar."],ans:0},
+  {q:"Dentro de las causas que originan en los años 70 un cambio en los modelos de familia en Europa, ¿en qué tipo de cambios se incluyen los referidos a la cohabitación sin matrimonio?",opts:["Pautas familiares.","Sociales.","Demográficos.","Eclesiásticos."],ans:0},
+  {q:"¿A partir de qué ley educativa se habla de participación democrática y papel activo de las familias?",opts:["LOGSE, 1990.","LOE, 2006.","LOMLOE, 2020.","LOMCE, 2013."],ans:0},
+  {q:"¿Qué dos factores generan las tipologías de estilos parentales?",opts:["Afecto y autoridad.","Permisividad y rigidez.","Control y afecto.","Permisividad y coerción."],ans:2},
+  {q:"La autoridad de los padres es necesaria para la educación de los hijos y:",opts:["Se debe adecuar a la necesidad de los hijos y no es unidireccional.","Debe imponerse por sí misma a no ser que deje de llamarse autoridad.","Aunque no se adecue a la necesidad de los hijos, no es unidireccional.","Aunque se adecua a la necesidad de los hijos, es unidireccional."],ans:0},
+  {q:"También puede limitar u obstaculizar la colaboración eficaz de familia-escuela: (formación profesorado)",opts:["La falta de formación del profesorado.","La sobrecualificación del profesorado.","La ausencia de actividades extraescolares.","La sobreabundancia de actividades extraescolares."],ans:0}
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+let wrong = 0;
+let failedIndices = [];
+let answered = false;
+let isRetryMode = false;
+let shuffledOpts = [];
+
+const LETTERS = ['A','B','C','D'];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startTest(retryFails) {
+  isRetryMode = retryFails;
+  if (retryFails && failedIndices.length > 0) {
+    questions = shuffle(failedIndices.map(i => ALL_QUESTIONS[i]));
+  } else {
+    questions = shuffle([...ALL_QUESTIONS]);
+    failedIndices = [];
+  }
+  current = 0; correct = 0; wrong = 0;
+  document.getElementById('screenStart').classList.add('hidden');
+  document.getElementById('screenResult').classList.add('hidden');
+  document.getElementById('screenTest').classList.remove('hidden');
+  document.getElementById('scorePend').textContent = questions.length;
+  document.getElementById('scoreOk').textContent = '0';
+  document.getElementById('scoreFail').textContent = '0';
+  renderQuestion();
+}
+
+function renderQuestion() {
+  answered = false;
+  const total = questions.length;
+  const q = questions[current];
+  const num = current + 1;
+
+  document.getElementById('qCounter').textContent = `Pregunta ${num} de ${total}`;
+  document.getElementById('qNum').textContent = `PREGUNTA ${num} DE ${total}`;
+  document.getElementById('progressFill').style.width = `${(current / total) * 100}%`;
+  document.getElementById('qText').textContent = q.q;
+
+  // Shuffle options but track correct answer
+  const indices = [0,1,2,3];
+  const shuffled = shuffle(indices);
+  shuffledOpts = shuffled;
+  const correctOriginalIdx = q.ans;
+
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+
+  shuffled.forEach((origIdx, pos) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.dataset.origIdx = origIdx;
+    btn.innerHTML = `<span class="opt-letter">${LETTERS[pos]}</span><span>${q.opts[origIdx]}</span>`;
+    btn.onclick = () => selectOption(btn, origIdx, correctOriginalIdx, q);
+    container.appendChild(btn);
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.style.display = '';
+  document.getElementById('btnNext').className = 'btn-next';
+}
+
+function selectOption(btn, selectedOrigIdx, correctOrigIdx, q) {
+  if (answered) return;
+  answered = true;
+
+  const allBtns = document.querySelectorAll('.opt-btn');
+  allBtns.forEach(b => {
+    b.disabled = true;
+    const origIdx = parseInt(b.dataset.origIdx);
+    if (origIdx === correctOrigIdx) {
+      b.classList.add('correct');
+    } else if (b === btn && selectedOrigIdx !== correctOrigIdx) {
+      b.classList.add('wrong');
+    }
+  });
+
+  const fb = document.getElementById('feedback');
+  const icon = document.getElementById('feedbackIcon');
+  const text = document.getElementById('feedbackText');
+
+  if (selectedOrigIdx === correctOrigIdx) {
+    correct++;
+    fb.className = 'feedback ok show';
+    icon.textContent = '✅';
+    text.textContent = '¡Correcto!';
+    document.getElementById('scoreOk').textContent = correct;
+  } else {
+    wrong++;
+    const qIdx = ALL_QUESTIONS.indexOf(q);
+    if (qIdx >= 0 && !isRetryMode) failedIndices.push(qIdx);
+    fb.className = 'feedback fail show';
+    icon.textContent = '❌';
+    text.textContent = `Incorrecto. La respuesta correcta es: "${q.opts[correctOrigIdx]}"`;
+    document.getElementById('scoreFail').textContent = wrong;
+  }
+
+  const pending = questions.length - current - 1;
+  document.getElementById('scorePend').textContent = pending;
+  document.getElementById('btnNext').className = 'btn-next show';
+  document.getElementById('btnNext').textContent = current < questions.length - 1 ? 'Siguiente →' : 'Ver resultados →';
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= questions.length) {
+    showResults();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showResults() {
+  document.getElementById('screenTest').classList.add('hidden');
+  const screen = document.getElementById('screenResult');
+  screen.classList.remove('hidden');
+
+  const total = questions.length;
+  const pct = Math.round((correct / total) * 100);
+
+  document.getElementById('rOk').textContent = correct;
+  document.getElementById('rFail').textContent = wrong;
+  document.getElementById('rPct').textContent = pct + '%';
+  document.getElementById('rBarLabel').textContent = pct + '%';
+
+  let emoji = '🎉', title = '¡Excelente!', sub = 'Dominas el temario. ¡Buen trabajo!';
+  if (pct < 50) { emoji = '😅'; title = 'Necesitas repasar'; sub = 'Vuelve a estudiar y repite las falladas.'; }
+  else if (pct < 70) { emoji = '📖'; title = '¡Vas bien!'; sub = 'Tienes base pero aún hay margen de mejora.'; }
+  else if (pct < 90) { emoji = '💪'; title = '¡Muy bien!'; sub = 'Buen nivel. Repasa las falladas para perfeccionar.'; }
+
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultSub').textContent = `${correct} de ${total} correctas · ${pct}%`;
+
+  setTimeout(() => {
+    document.getElementById('rBarFill').style.width = pct + '%';
+  }, 100);
+
+  // Lista de fallos
+  const failList = document.getElementById('failList');
+  failList.innerHTML = '';
+  if (wrong > 0) {
+    failList.innerHTML = `<div class="fail-list-title">❌ Preguntas falladas (${wrong})</div>`;
+    // Recopilar las falladas de esta sesión
+    const failedInSession = [];
+    questions.forEach((q, i) => {
+      // Reconstruimos cuáles fallaron buscando en ALL_QUESTIONS
+      const qIdx = ALL_QUESTIONS.indexOf(q);
+      if (!isRetryMode && failedIndices.includes(qIdx)) {
+        failedInSession.push(q);
+      } else if (isRetryMode) {
+        // en modo retry no tenemos tracking fino, mostramos todas las del banco falladas
+      }
+    });
+
+    // Mostrar preguntas falladas (del banco original)
+    const toShow = isRetryMode ? questions : failedIndices.map(i => ALL_QUESTIONS[i]);
+    toShow.slice(0, 20).forEach((q, i) => {
+      const div = document.createElement('div');
+      div.className = 'fail-item';
+      div.innerHTML = `<strong>Pregunta ${i+1}</strong>${q.q}`;
+      failList.appendChild(div);
+    });
+    if (toShow.length > 20) {
+      const more = document.createElement('div');
+      more.className = 'fail-item';
+      more.style.color = 'var(--muted)';
+      more.textContent = `... y ${toShow.length - 20} más`;
+      failList.appendChild(more);
+    }
+  }
+
+  const btnRepeat = document.getElementById('btnRepeatFails');
+  if (wrong > 0 && !isRetryMode && failedIndices.length > 0) {
+    btnRepeat.style.display = 'block';
+    btnRepeat.textContent = `🔁 Repetir solo falladas (${failedIndices.length})`;
+  } else {
+    btnRepeat.style.display = 'none';
+  }
+}
+
+function showStart() {
+  document.getElementById('screenResult').classList.add('hidden');
+  document.getElementById('screenTest').classList.add('hidden');
+  document.getElementById('screenStart').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
